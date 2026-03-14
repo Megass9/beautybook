@@ -26,7 +26,7 @@ export default function StaffClient({
   initialStaff: Staff[];
   services: Service[];
 }) {
-  const supabase = createClient();
+  const supabase = createClient() as any;
 
   const [staff, setStaff] = useState(initialStaff);
   const [showModal, setShowModal] = useState(false);

@@ -10,7 +10,7 @@ const DAYS = ["Pazar", "Pazartesi", "Salı", "Carsamba", "Persembe", "Cuma", "Cu
 type SalonUpdate = Database["public"]["Tables"]["salons"]["Update"];
 
 export default function SettingsClient({ salon, hours }: { salon: Salon; hours: WorkingHour[] }) {
-  const supabase = createClient();
+  const supabase = createClient() as any;
   const [form, setForm] = useState<SalonUpdate>({
     name: salon.name,
     address: salon.address || "",

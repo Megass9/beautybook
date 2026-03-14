@@ -17,9 +17,9 @@ export interface Salon {
 export interface WorkingHour {
   id: string;
   salon_id: string;
-  day_of_week: number; // 0=Sunday, 1=Monday, ...
-  open_time: string; // "09:00"
-  close_time: string; // "18:00"
+  day_of_week: number;
+  open_time: string;
+  close_time: string;
   is_closed: boolean;
 }
 
@@ -79,13 +79,12 @@ export interface Appointment {
   customer_id: string;
   staff_id: string;
   service_id: string;
-  appointment_date: string; // "2024-01-15"
-  start_time: string; // "14:00"
-  end_time: string; // "15:00"
+  appointment_date: string;
+  start_time: string;
+  end_time: string;
   status: "pending" | "confirmed" | "cancelled" | "completed";
   notes?: string;
   created_at: string;
-  // Joins
   customer?: Customer;
   staff?: Staff;
   service?: Service;
@@ -99,7 +98,11 @@ export interface Database {
       staff: { Row: Staff; Insert: Omit<Staff, "id" | "created_at">; Update: Partial<Staff> };
       services: { Row: Service; Insert: Omit<Service, "id" | "created_at">; Update: Partial<Service> };
       customers: { Row: Customer; Insert: Omit<Customer, "id" | "created_at">; Update: Partial<Customer> };
-      appointments: { Row: Appointment; Insert: Omit<Appointment, "id" | "created_at">; Update: Partial<Appointment> };
+      appointments: { Row: Appointment; Insert: Omit<Appointment, "id" | "created_at" | "customer" | "staff" | "service">; Update: Partial<Appointment> };
+      staff_services: { Row: StaffService; Insert: StaffService; Update: Partial<StaffService> };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
   };
 }

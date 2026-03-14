@@ -21,7 +21,7 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string
 const defaultColor = { bg: "bg-stone-100", text: "text-stone-600", border: "border-stone-200", dot: "bg-stone-400" };
 
 export default function ServicesClient({ salonId, initialServices }: { salonId: string; initialServices: Service[] }) {
-  const supabase = createClient();
+  const supabase = createClient() as any;
   const [services, setServices] = useState(initialServices);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Service | null>(null);

@@ -28,7 +28,7 @@ type StaffMember = {
 export const dynamic = "force-dynamic";
 
 export default async function StaffDashboardPage() {
-  const supabase = createServerClient();
+  const supabase = createServerClient() as any;
 
   const {
     data: { user },

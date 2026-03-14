@@ -2,7 +2,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { StaffClient } from "@/components/dashboard/StaffClient";
 
 export default async function StaffPage() {
-  const supabase = createServerClient();
+  const supabase = createServerClient() as any;
   const { data: { session } } = await supabase.auth.getSession();
   const { data: salon } = await supabase.from("salons").select("id").eq("owner_id", session?.user.id).single();
 

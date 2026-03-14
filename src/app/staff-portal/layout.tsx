@@ -6,7 +6,7 @@ export default async function StaffPortalLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createServerClient();
+  const supabase = createServerClient() as any;
   const { data: { user } } = await supabase.auth.getUser();
 
   return (

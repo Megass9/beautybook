@@ -19,7 +19,7 @@ const STEPS = [
 export default function BookingClient({
   salonId, services, staffList, workingHours
 }: { salonId: string; services: Service[]; staffList: Staff[]; workingHours: WorkingHour[] }) {
-  const supabase = createClient();
+  const supabase = createClient() as any;
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);

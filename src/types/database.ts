@@ -36,6 +36,7 @@ export interface Database {
           phone: string | null
           avatar_url: string | null
           title: string | null
+          role: string | null
           is_active: boolean
         }
         Insert: Omit<Database['public']['Tables']['staff']['Row'], 'id' | 'created_at'>
@@ -64,6 +65,7 @@ export interface Database {
           staff_id: string
           service_id: string
           customer_id: string
+          appointment_date: string
           start_time: string
           end_time: string
           status: 'pending' | 'confirmed' | 'cancelled' | 'completed'

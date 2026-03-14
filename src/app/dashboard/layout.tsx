@@ -4,7 +4,7 @@ import DashboardSidebar from "@/components/dashboard/Sidebar";
 import DashboardHeader from "@/components/dashboard/Header";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const supabase = createServerClient();
+  const supabase = createServerClient() as any;
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect("/auth/login");

@@ -3,7 +3,7 @@ import ServicesClient from "./ServicesClient";
 import { redirect } from "next/navigation";
 
 export default async function ServicesPage() {
-  const supabase = createServerClient();
+  const supabase = createServerClient() as any;
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");

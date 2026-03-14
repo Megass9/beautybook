@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 
 export default function StaffLoginPage() {
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = createClient() as any;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);

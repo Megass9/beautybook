@@ -2,7 +2,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import AppointmentsClient from "./AppointmentsClient";
 
 export default async function AppointmentsPage() {
-  const supabase = createServerClient();
+  const supabase = createServerClient() as any;
   const { data: { session } } = await supabase.auth.getSession();
 
   const { data: salon } = await supabase

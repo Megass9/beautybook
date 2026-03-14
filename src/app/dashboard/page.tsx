@@ -28,7 +28,7 @@ type SalonRow = {
 };
 
 export default async function DashboardPage() {
-  const supabase = createServerClient();
+  const supabase = createServerClient() as any;
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return null;

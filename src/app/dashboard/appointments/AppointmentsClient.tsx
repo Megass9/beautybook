@@ -24,7 +24,7 @@ const STATUS_MAP = {
 };
 
 export default function AppointmentsClient({ salonId, initialAppointments, services, staffList, customers }: Props) {
-  const supabase = createClient();
+  const supabase = createClient() as any;
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
