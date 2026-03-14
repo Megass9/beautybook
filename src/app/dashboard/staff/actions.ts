@@ -9,7 +9,7 @@ export async function createStaffAction(
   form: { name: string; role: string; phone: string; email: string; password?: string },
   serviceIds: string[],
 ): Promise<{ data?: Staff; credentials?: { email: string; password: string }; error?: string }> {
-  const supabaseAdmin = createAdminClient()
+  const supabaseAdmin = createAdminClient() as any
 
   const email = form.email?.trim()
   if (!email) {

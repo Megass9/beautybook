@@ -64,6 +64,8 @@ export interface Service {
 }
 
 export interface Customer {
+  total_appointments?: number;
+  total_spent?: number;
   id: string;
   salon_id: string;
   name: string;

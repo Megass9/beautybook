@@ -9,7 +9,7 @@ import toast from 'react-hot-toast'
 const CATEGORIES = ['Saç', 'Manikür/Pedikür', 'Kaş/Kirpik', 'Cilt Bakımı', 'Masaj', 'Epilasyon', 'Diğer']
 
 export function ServicesClient({ salonId, initialServices }: { salonId: string; initialServices: Service[] }) {
-  const supabase = createClient()
+  const supabase = createClient() as any
   const [services, setServices] = useState(initialServices)
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<Service | null>(null)

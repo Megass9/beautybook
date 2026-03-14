@@ -19,7 +19,7 @@ export function StaffClient({
   services: Service[]
   staffServices: StaffService[]
 }) {
-  const supabase = createClient()
+  const supabase = createClient() as any
   const [staff, setStaff] = useState(initialStaff)
   const [staffServices, setStaffServices] = useState(initialSS)
   const [showModal, setShowModal] = useState(false)
@@ -88,7 +88,7 @@ export function StaffClient({
         if (result.error) throw new Error(result.error)
         if (!result.data || !result.credentials) throw new Error("Personel oluşturulamadı")
 
-        setStaff(s => [...s, result.data])
+        setStaff(s => [...s, result.data!])
         staffId = result.data.id
 
         setCredentials(result.credentials)

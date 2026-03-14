@@ -37,7 +37,7 @@ export default async function DashboardPage() {
     .from("salons")
     .select("id, name, slug")
     .eq("owner_id", user.id)
-    .single<SalonRow>();
+    .single();
 
   if (!salon) return null;
 
@@ -57,33 +57,33 @@ export default async function DashboardPage() {
     supabase.from("appointments")
       .select("*, customer:customers(*), service:services(*), staff:staff(*)")
       .eq("salon_id", salon.id).eq("appointment_date", today).order("start_time")
-      .returns<AptRow[]>(),
+      ,
     supabase.from("appointments")
       .select("service:services(price)")
       .eq("salon_id", salon.id).eq("appointment_date", yesterday).eq("status", "completed")
-      .returns<PriceRow[]>(),
+      ,
     supabase.from("customers").select("id", { count: "exact" }).eq("salon_id", salon.id),
     supabase.from("customers").select("id", { count: "exact" }).eq("salon_id", salon.id).gte("created_at", monthStart),
     supabase.from("appointments")
       .select("service:services(price)").eq("salon_id", salon.id).eq("status", "completed")
-      .returns<PriceRow[]>(),
+      ,
     supabase.from("appointments")
       .select("service:services(price)").eq("salon_id", salon.id)
       .eq("status", "completed").gte("appointment_date", monthStart)
-      .returns<PriceRow[]>(),
+      ,
     supabase.from("appointments")
       .select("*, customer:customers(*), service:services(*), staff:staff(*)")
       .eq("salon_id", salon.id).eq("status", "pending").order("appointment_date").limit(5)
-      .returns<AptRow[]>(),
+      ,
   ]);
 
-  const totalRevenue = allCompletedApts?.reduce((sum, apt) => sum + (apt.service?.price || 0), 0) || 0;
-  const monthRevenue = monthApts?.reduce((sum, apt) => sum + (apt.service?.price || 0), 0) || 0;
-  const yesterdayRevenue = yesterdayApts?.reduce((sum, apt) => sum + (apt.service?.price || 0), 0) || 0;
+  const totalRevenue = allCompletedApts?.reduce((sum: number, apt: any) => sum + (apt.service?.price || 0), 0) || 0;
+  const monthRevenue = monthApts?.reduce((sum: number, apt: any) => sum + (apt.service?.price || 0), 0) || 0;
+  const yesterdayRevenue = yesterdayApts?.reduce((sum: number, apt: any) => sum + (apt.service?.price || 0), 0) || 0;
 
-  const confirmedToday = todayApts?.filter(a => a.status === "confirmed").length || 0;
-  const pendingToday   = todayApts?.filter(a => a.status === "pending").length   || 0;
-  const completedToday = todayApts?.filter(a => a.status === "completed").length || 0;
+  const confirmedToday = todayApts?.filter((a: any) => a.status === "confirmed").length || 0;
+  const pendingToday   = todayApts?.filter((a: any) => a.status === "pending").length   || 0;
+  const completedToday = todayApts?.filter((a: any) => a.status === "completed").length || 0;
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Günaydın" : hour < 18 ? "İyi günler" : "İyi akşamlar";
@@ -238,7 +238,7 @@ export default async function DashboardPage() {
             </div>
           ) : (
             <div className="divide-y divide-stone-50">
-              {todayApts.map((apt) => {
+              {todayApts.map((apt: any) => {
                 const s = STATUS_STYLES[apt.status] || STATUS_STYLES.pending;
                 return (
                   <div key={apt.id} className="flex items-center gap-4 px-6 py-3.5 hover:bg-stone-50/60 transition-colors">
@@ -289,7 +289,7 @@ export default async function DashboardPage() {
                 </Link>
               </div>
               <div className="p-3 space-y-2">
-                {pendingApts?.slice(0, 3).map((apt) => (
+                {pendingApts?.slice(0, 3).map((apt: any) => (
                   <div key={apt.id} className="bg-white rounded-xl p-3 border border-amber-100 flex items-center gap-3">
                     <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center text-amber-700 text-xs font-black shrink-0">
                       {apt.customer?.name?.[0] || "?"}

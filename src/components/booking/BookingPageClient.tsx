@@ -25,7 +25,7 @@ export function BookingPageClient({
   staffServices: { staff_id: string; service_id: string }[]
   workingHours: WorkingHours[]
 }) {
-  const supabase = createClient()
+  const supabase = createClient() as any
   const [step, setStep] = useState<Step>(1)
   const [selectedService, setSelectedService] = useState<Service | null>(null)
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null)

@@ -22,7 +22,7 @@ export function AppointmentsClient({ salonId, initialAppointments, staff, servic
   salonId: string; initialAppointments: Apt[]
   staff: any[]; services: any[]; customers: any[]
 }) {
-  const supabase = createClient()
+  const supabase = createClient() as any
   const [appointments, setAppointments] = useState(initialAppointments)
   const [currentWeek, setCurrentWeek] = useState(new Date())
   const [view, setView] = useState<'week' | 'list'>('list')

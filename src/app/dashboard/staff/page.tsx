@@ -11,7 +11,7 @@ export default async function StaffPage() {
   }
 
   const { data: staff } = await supabase.from("staff").select("*").eq("salon_id", salon.id).order("created_at");
-  const staffIds = staff?.map(s => s.id) || [];
+  const staffIds = staff?.map((s: any) => s.id) || [];
 
   const [{ data: services }, { data: staffServices }] = await Promise.all([
     supabase.from("services").select("id, name").eq("salon_id", salon.id).eq("is_active", true),

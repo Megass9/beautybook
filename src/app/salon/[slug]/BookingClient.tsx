@@ -19,7 +19,7 @@ const STEPS = [
 export default function BookingClient({
   salonId, services, staffList, workingHours
 }: { salonId: string; services: Service[]; staffList: Staff[]; workingHours: WorkingHour[] }) {
-  const supabase = createClient() as any;
+  const supabase = createClient() as any as any as any;
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -55,7 +55,7 @@ export default function BookingClient({
     setLoading(true);
     try {
       let { data: customer } = await supabase
-        .from("customers").select("id").eq("salon_id", salonId).eq("phone", selected.phone).single<{ id: string }>();
+        .from("customers").select("id").eq("salon_id", salonId).eq("phone", selected.phone).single();
 
       if (!customer) {
         const { data: newC, error } = await supabase.from("customers")
