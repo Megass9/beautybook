@@ -59,14 +59,14 @@ export default function RegisterPage() {
           address: salon.address,
           city: salon.city,
           phone: salon.phone,
-        })
+        } as any)
         .select()
         .single();
       if (salonError) throw new Error(salonError.message);
 
       const { error: hoursError } = await supabase
         .from("working_hours")
-        .insert(hours.map((h) => ({ ...h, salon_id: salonData.id })));
+        .insert(hours.map((h) => ({ ...h, salon_id: salonData.id })) as any);
       if (hoursError) throw new Error(hoursError.message);
 
       toast.success("Salonunuz oluşturuldu!");

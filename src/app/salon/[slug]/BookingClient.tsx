@@ -59,7 +59,7 @@ export default function BookingClient({
 
       if (!customer) {
         const { data: newC, error } = await supabase.from("customers")
-          .insert({ salon_id: salonId, name: selected.name, phone: selected.phone })
+          .insert({ salon_id: salonId, name: selected.name, phone: selected.phone } as any)
           .select().single();
         if (error) throw error;
         customer = newC;
@@ -77,7 +77,7 @@ export default function BookingClient({
         salon_id: salonId, customer_id: customer!.id, service_id: selected.service.id,
         staff_id: selected.staff.id, appointment_date: selected.date,
         start_time: selected.time, end_time: endTime, status: "pending",
-      });
+      } as any);
 
       if (error) throw error;
       setDone(true);
