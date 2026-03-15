@@ -22,9 +22,8 @@ interface Props {
 }
 
 export default function BookingClient({ salonId, services, staffList, workingHours }: Props) {
-  const supabase = createClient();
+  const supabase = createClient() as any;
 
-  // ── Tüm hook'lar koşulsuz, en üstte ──
   const [step, setStep] = useState<Step>("service");
   const [loading, setLoading] = useState(false);
   const [selectedService, setSelectedService] = useState<any>(null);
@@ -34,7 +33,6 @@ export default function BookingClient({ salonId, services, staffList, workingHou
   const [customerForm, setCustomerForm] = useState({ name: "", phone: "", note: "" });
   const [busySlots, setBusySlots] = useState<string[]>([]);
 
-  // Çalışma saatlerinden saat dilimlerini türet
   const timeSlots = useMemo(() => {
     const slots: string[] = [];
     const dayOfWeek = selectedDate.getDay();
@@ -54,7 +52,6 @@ export default function BookingClient({ salonId, services, staffList, workingHou
     return slots;
   }, [workingHours, selectedDate]);
 
-  // Dolu saatleri çek
   useEffect(() => {
     async function fetchAvailability() {
       if (!selectedStaff || !selectedDate || !salonId) return;
@@ -74,7 +71,6 @@ export default function BookingClient({ salonId, services, staffList, workingHou
     fetchAvailability();
   }, [selectedStaff, selectedDate, salonId, supabase]);
 
-  // Seçili hizmeti yapabilen personelleri filtrele
   const availableStaff = useMemo(() => {
     if (!selectedService || !staffList) return [];
     return staffList.filter((s: any) =>
@@ -82,7 +78,6 @@ export default function BookingClient({ salonId, services, staffList, workingHou
     );
   }, [selectedService, staffList]);
 
-  // Avatar rengi
   const getAvatarColor = (name: string) => {
     const colors = [
       "bg-rose-100 text-rose-600",
@@ -94,7 +89,6 @@ export default function BookingClient({ salonId, services, staffList, workingHou
     return colors[name.charCodeAt(0) % colors.length];
   };
 
-  // Randevu gönder
   const handleSubmit = async () => {
     if (!customerForm.name || !customerForm.phone) {
       toast.error("Lütfen ad ve telefon giriniz");
@@ -104,23 +98,24 @@ export default function BookingClient({ salonId, services, staffList, workingHou
     try {
       let customerId: string;
 
+      // maybeSingle() kullan — bulunamazsa null döner, never tipi hatası olmaz
       const { data: existingCust } = await supabase
         .from("customers")
         .select("id")
         .eq("salon_id", salonId)
         .eq("phone", customerForm.phone)
-        .single();
+        .maybeSingle();
 
       if (existingCust) {
-        customerId = existingCust.id;
+        customerId = (existingCust as any).id;
       } else {
-        const { data: newCust, error: custError } = await supabase
-          .from("customers")
-          .insert({ salon_id: salonId, name: customerForm.name, phone: customerForm.phone })
+        const { data: newCust, error: custError } = await (supabase as any)
+  .from("customers")
+  .insert({ salon_id: salonId, name: customerForm.name, phone: customerForm.phone })
           .select()
-          .single();
+          .maybeSingle();
         if (custError) throw custError;
-        customerId = newCust.id;
+        customerId = (newCust as any).id;
       }
 
       const [h, m] = selectedTime!.split(":").map(Number);
@@ -152,7 +147,6 @@ export default function BookingClient({ salonId, services, staffList, workingHou
     }
   };
 
-  // ── Success ekranı ──
   if (step === "success") {
     return (
       <div className="text-center py-8">
@@ -189,7 +183,6 @@ export default function BookingClient({ salonId, services, staffList, workingHou
     );
   }
 
-  // Step göstergesi
   const STEPS = [
     { id: "service", label: "Hizmet", icon: Scissors },
     { id: "staff", label: "Personel", icon: User },
@@ -200,7 +193,7 @@ export default function BookingClient({ salonId, services, staffList, workingHou
 
   return (
     <div>
-      {/* ── Progress Bar ── */}
+      {/* Progress Bar */}
       <div className="flex items-center gap-2 mb-8">
         {STEPS.map((s, idx) => {
           const isActive = s.id === step;
@@ -227,7 +220,7 @@ export default function BookingClient({ salonId, services, staffList, workingHou
         })}
       </div>
 
-      {/* ── Geri butonu ── */}
+      {/* Geri butonu */}
       {step !== "service" && (
         <button
           onClick={() => {
@@ -241,7 +234,7 @@ export default function BookingClient({ salonId, services, staffList, workingHou
         </button>
       )}
 
-      {/* ── ADIM 1: HİZMET ── */}
+      {/* ADIM 1: HİZMET */}
       {step === "service" && (
         <div>
           <h3 className="text-lg font-bold text-stone-900 mb-1">Hizmet Seçin</h3>
@@ -280,7 +273,7 @@ export default function BookingClient({ salonId, services, staffList, workingHou
         </div>
       )}
 
-      {/* ── ADIM 2: PERSONEL ── */}
+      {/* ADIM 2: PERSONEL */}
       {step === "staff" && (
         <div>
           <h3 className="text-lg font-bold text-stone-900 mb-1">Personel Seçin</h3>
@@ -327,13 +320,12 @@ export default function BookingClient({ salonId, services, staffList, workingHou
         </div>
       )}
 
-      {/* ── ADIM 3: TARİH & SAAT ── */}
+      {/* ADIM 3: TARİH & SAAT */}
       {step === "datetime" && (
         <div>
           <h3 className="text-lg font-bold text-stone-900 mb-1">Tarih & Saat Seçin</h3>
           <p className="text-sm text-stone-400 mb-5">Size uygun gün ve saati belirleyin.</p>
 
-          {/* Tarih kaydırıcı */}
           <div className="flex gap-2 overflow-x-auto pb-3 mb-5 scrollbar-hide">
             {Array.from({ length: 14 }).map((_, i) => {
               const d = addDays(new Date(), i);
@@ -364,7 +356,6 @@ export default function BookingClient({ salonId, services, staffList, workingHou
             })}
           </div>
 
-          {/* Saat dilimleri */}
           {timeSlots.length === 0 ? (
             <div className="text-center py-6 text-stone-400 text-sm">
               Bu gün için müsait saat bulunmuyor.
@@ -406,7 +397,7 @@ export default function BookingClient({ salonId, services, staffList, workingHou
         </div>
       )}
 
-      {/* ── ADIM 4: BİLGİLER ── */}
+      {/* ADIM 4: BİLGİLER */}
       {step === "info" && (
         <div>
           <h3 className="text-lg font-bold text-stone-900 mb-1">Bilgilerinizi Girin</h3>
@@ -447,7 +438,6 @@ export default function BookingClient({ salonId, services, staffList, workingHou
             </div>
           </div>
 
-          {/* Özet */}
           <div className="bg-rose-50 border border-rose-100 rounded-2xl p-5 mb-6">
             <p className="text-xs font-bold text-rose-700 uppercase tracking-widest mb-3">Randevu Özeti</p>
             <div className="space-y-2 text-sm">
