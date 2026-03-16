@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   format, addDays, isSameDay, startOfToday,
   addMinutes as dateFnsAddMinutes
@@ -22,7 +22,9 @@ interface Props {
 }
 
 export default function BookingClient({ salonId, services, staffList, workingHours }: Props) {
-  const supabase = createClient() as any;
+  // supabase istemcisini ref ile tut — her render'da yeniden oluşmasın
+  const supabaseRef = useRef(createClient() as any);
+  const supabase = supabaseRef.current;
 
   const [step, setStep] = useState<Step>("service");
   const [loading, setLoading] = useState(false);
@@ -33,18 +35,19 @@ export default function BookingClient({ salonId, services, staffList, workingHou
   const [customerForm, setCustomerForm] = useState({ name: "", phone: "", note: "" });
   const [busySlots, setBusySlots] = useState<string[]>([]);
 
+  // Çalışma saatlerinden saat dilimleri
   const timeSlots = useMemo(() => {
     const slots: string[] = [];
     const dayOfWeek = selectedDate.getDay();
-    const todayHours = workingHours.find((h: any) => h.day_of_week === dayOfWeek && !h.is_closed);
-
+    const todayHours = workingHours.find(
+      (h: any) => h.day_of_week === dayOfWeek && !h.is_closed
+    );
     const startHour = todayHours?.open_time
       ? parseInt(todayHours.open_time.split(":")[0])
       : 9;
     const endHour = todayHours?.close_time
       ? parseInt(todayHours.close_time.split(":")[0])
       : 19;
-
     for (let i = startHour; i < endHour; i++) {
       slots.push(`${i.toString().padStart(2, "0")}:00`);
       slots.push(`${i.toString().padStart(2, "0")}:30`);
@@ -52,30 +55,31 @@ export default function BookingClient({ salonId, services, staffList, workingHou
     return slots;
   }, [workingHours, selectedDate]);
 
+  // Dolu saatleri çek
   useEffect(() => {
-    async function fetchAvailability() {
-      if (!selectedStaff || !selectedDate || !salonId) return;
-      const dateStr = format(selectedDate, "yyyy-MM-dd");
-      const { data } = await supabase
-        .from("appointments")
-        .select("start_time")
-        .eq("salon_id", salonId)
-        .eq("staff_id", selectedStaff.id)
-        .eq("appointment_date", dateStr)
-        .neq("status", "cancelled");
+    if (!selectedStaff?.id || !salonId) return;
+    const dateStr = format(selectedDate, "yyyy-MM-dd");
+    supabase
+      .from("appointments")
+      .select("start_time")
+      .eq("salon_id", salonId)
+      .eq("staff_id", selectedStaff.id)
+      .eq("appointment_date", dateStr)
+      .neq("status", "cancelled")
+      .then(({ data }: any) => {
+        if (data) setBusySlots(data.map((a: any) => a.start_time.slice(0, 5)));
+      });
+  }, [selectedStaff?.id, selectedDate, salonId]); // supabase yok — ref sabit
 
-      if (data) {
-        setBusySlots(data.map((a: any) => a.start_time.slice(0, 5)));
-      }
-    }
-    fetchAvailability();
-  }, [selectedStaff, selectedDate, salonId, supabase]);
-
+  // Seçili hizmeti yapabilen personeller
+  // Eğer staff_services verisi yoksa tüm personeli göster (fallback)
   const availableStaff = useMemo(() => {
-    if (!selectedService || !staffList) return [];
-    return staffList.filter((s: any) =>
+    if (!selectedService) return [];
+    const withService = staffList.filter((s: any) =>
       s.staff_services?.some((ss: any) => ss.service_id === selectedService.id)
     );
+    // staff_services join'i gelmemişse herkesi göster
+    return withService.length > 0 ? withService : staffList;
   }, [selectedService, staffList]);
 
   const getAvatarColor = (name: string) => {
@@ -98,7 +102,6 @@ export default function BookingClient({ salonId, services, staffList, workingHou
     try {
       let customerId: string;
 
-      // maybeSingle() kullan — bulunamazsa null döner, never tipi hatası olmaz
       const { data: existingCust } = await supabase
         .from("customers")
         .select("id")
@@ -107,15 +110,15 @@ export default function BookingClient({ salonId, services, staffList, workingHou
         .maybeSingle();
 
       if (existingCust) {
-        customerId = (existingCust as any).id;
+        customerId = existingCust.id;
       } else {
-        const { data: newCust, error: custError } = await (supabase as any)
-  .from("customers")
-  .insert({ salon_id: salonId, name: customerForm.name, phone: customerForm.phone })
+        const { data: newCust, error: custError } = await supabase
+          .from("customers")
+          .insert({ salon_id: salonId, name: customerForm.name, phone: customerForm.phone })
           .select()
-          .maybeSingle();
+          .single();
         if (custError) throw custError;
-        customerId = (newCust as any).id;
+        customerId = newCust.id;
       }
 
       const [h, m] = selectedTime!.split(":").map(Number);
@@ -147,6 +150,7 @@ export default function BookingClient({ salonId, services, staffList, workingHou
     }
   };
 
+  // Success ekranı
   if (step === "success") {
     return (
       <div className="text-center py-8">
@@ -239,7 +243,6 @@ export default function BookingClient({ salonId, services, staffList, workingHou
         <div>
           <h3 className="text-lg font-bold text-stone-900 mb-1">Hizmet Seçin</h3>
           <p className="text-sm text-stone-400 mb-5">Almak istediğiniz hizmeti seçiniz.</p>
-
           {services.length === 0 ? (
             <div className="text-center py-8 text-stone-400 text-sm">
               Bu salonda henüz hizmet tanımlanmamış.
@@ -278,17 +281,13 @@ export default function BookingClient({ salonId, services, staffList, workingHou
         <div>
           <h3 className="text-lg font-bold text-stone-900 mb-1">Personel Seçin</h3>
           <p className="text-sm text-stone-400 mb-5">İşlemi yapacak uzmanı seçiniz.</p>
-
           {availableStaff.length === 0 ? (
             <div className="text-center py-8">
               <div className="bg-amber-50 text-amber-700 p-4 rounded-xl flex items-center gap-3 text-sm justify-center mb-4">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 Bu hizmet için uygun personel bulunamadı.
               </div>
-              <button
-                onClick={() => setStep("service")}
-                className="text-sm text-rose-600 hover:underline"
-              >
+              <button onClick={() => setStep("service")} className="text-sm text-rose-600 hover:underline">
                 Farklı bir hizmet seç
               </button>
             </div>
@@ -325,7 +324,6 @@ export default function BookingClient({ salonId, services, staffList, workingHou
         <div>
           <h3 className="text-lg font-bold text-stone-900 mb-1">Tarih & Saat Seçin</h3>
           <p className="text-sm text-stone-400 mb-5">Size uygun gün ve saati belirleyin.</p>
-
           <div className="flex gap-2 overflow-x-auto pb-3 mb-5 scrollbar-hide">
             {Array.from({ length: 14 }).map((_, i) => {
               const d = addDays(new Date(), i);
@@ -346,20 +344,15 @@ export default function BookingClient({ salonId, services, staffList, workingHou
                       : "bg-white text-stone-600 border-stone-200 hover:border-rose-300 hover:bg-rose-50"
                   }`}
                 >
-                  <span className="text-[10px] font-medium uppercase">
-                    {format(d, "EEE", { locale: tr })}
-                  </span>
+                  <span className="text-[10px] font-medium uppercase">{format(d, "EEE", { locale: tr })}</span>
                   <span className="text-lg font-black">{format(d, "d")}</span>
                   {isClosed && <span className="text-[9px] text-stone-300">Kapalı</span>}
                 </button>
               );
             })}
           </div>
-
           {timeSlots.length === 0 ? (
-            <div className="text-center py-6 text-stone-400 text-sm">
-              Bu gün için müsait saat bulunmuyor.
-            </div>
+            <div className="text-center py-6 text-stone-400 text-sm">Bu gün için müsait saat bulunmuyor.</div>
           ) : (
             <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
               {timeSlots.map(time => {
@@ -384,7 +377,6 @@ export default function BookingClient({ salonId, services, staffList, workingHou
               })}
             </div>
           )}
-
           <div className="mt-6 flex justify-end">
             <button
               disabled={!selectedTime}
@@ -402,7 +394,6 @@ export default function BookingClient({ salonId, services, staffList, workingHou
         <div>
           <h3 className="text-lg font-bold text-stone-900 mb-1">Bilgilerinizi Girin</h3>
           <p className="text-sm text-stone-400 mb-5">Randevuyu tamamlamak için bilgilerinizi giriniz.</p>
-
           <div className="space-y-4 mb-6">
             <div>
               <label className="block text-xs font-bold text-stone-600 mb-1.5 uppercase tracking-wide">Ad Soyad</label>
@@ -437,7 +428,6 @@ export default function BookingClient({ salonId, services, staffList, workingHou
               />
             </div>
           </div>
-
           <div className="bg-rose-50 border border-rose-100 rounded-2xl p-5 mb-6">
             <p className="text-xs font-bold text-rose-700 uppercase tracking-widest mb-3">Randevu Özeti</p>
             <div className="space-y-2 text-sm">
@@ -465,7 +455,6 @@ export default function BookingClient({ salonId, services, staffList, workingHou
               </div>
             </div>
           </div>
-
           <button
             onClick={handleSubmit}
             disabled={loading}
