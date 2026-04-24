@@ -100,6 +100,18 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['working_hours']['Row'], 'id'>
         Update: Partial<Database['public']['Tables']['working_hours']['Insert']>
       }
+      notifications: {
+        Row: {
+          id: string
+          created_at: string
+          salon_id: string
+          title: string
+          message: string
+          is_read: boolean
+        }
+        Insert: Omit<Database['public']['Tables']['notifications']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['notifications']['Insert']>
+      }
       staff_services: {
         Row: {
           staff_id: string
@@ -124,3 +136,5 @@ export type AppointmentWithDetails = Appointment & {
   service: Service
   customer: Customer
 }
+
+export type Notification = Database['public']['Tables']['notifications']['Row']

@@ -99,6 +99,27 @@ CREATE TABLE working_hours (
   is_closed   BOOLEAN DEFAULT FALSE
 );
 
+-- Reviews
+CREATE TABLE reviews (
+  id            UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  created_at    TIMESTAMPTZ DEFAULT NOW(),
+  salon_id      UUID REFERENCES salons(id) ON DELETE CASCADE NOT NULL,
+  customer_name TEXT NOT NULL,
+  rating        INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment       TEXT,
+  is_verified   BOOLEAN DEFAULT FALSE
+);
+
+-- Notifications for admin announcements to salon owners
+CREATE TABLE notifications (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  salon_id UUID REFERENCES salons(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  is_read BOOLEAN DEFAULT FALSE
+);
+
 -- ============================================================
 -- INDEXES
 -- ============================================================
@@ -113,6 +134,7 @@ CREATE INDEX idx_appointments_salon ON appointments(salon_id);
 CREATE INDEX idx_appointments_staff ON appointments(staff_id, start_time);
 CREATE INDEX idx_appointments_time  ON appointments(start_time);
 CREATE INDEX idx_wh_salon       ON working_hours(salon_id);
+CREATE INDEX idx_notifications_salon ON notifications(salon_id);
 
 -- ============================================================
 -- ROW LEVEL SECURITY
@@ -125,6 +147,7 @@ ALTER TABLE staff_services ENABLE ROW LEVEL SECURITY;
 ALTER TABLE customers    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE working_hours ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
 -- Helper function: returns salon_id for authenticated user
 CREATE OR REPLACE FUNCTION auth_user_salon_id()
@@ -157,6 +180,10 @@ CREATE POLICY "Owner manages services"
   ON services FOR ALL TO authenticated
   USING (salon_id = auth_user_salon_id())
   WITH CHECK (salon_id = auth_user_salon_id());
+
+CREATE POLICY "Owner can read own salon notifications"
+  ON notifications FOR SELECT TO authenticated
+  USING (salon_id = auth_user_salon_id());
 
 CREATE POLICY "Public can view services"
   ON services FOR SELECT TO anon

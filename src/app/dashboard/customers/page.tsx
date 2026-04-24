@@ -1,15 +1,28 @@
 import { createServerClient } from "@/lib/supabase/server";
 import CustomersClient from "./CustomersClient";
+import { redirect } from "next/navigation";
+
+type SalonRow = { id: string };
 
 export default async function CustomersPage() {
-  const supabase = createServerClient() as any;
-  const { data: { session } } = await supabase.auth.getSession();
+  const supabase = createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: salon } = await supabase.from("salons").select("id").eq("owner_id", session!.user.id).single();
+  if (!user) redirect("/auth/login");
+
+  const { data: salon } = await supabase
+    .from("salons")
+    .select("id")
+    .eq("owner_id", user.id)
+    .single<SalonRow>();
+
+  if (!salon) return null;
+
   const { data: customers } = await supabase
     .from("customers")
     .select("*, appointments(count)")
-    .eq("salon_id", salon!.id)
+    .eq("salon_id", salon.id)
     .order("created_at", { ascending: false });
-  return <CustomersClient salonId={salon!.id} initialCustomers={customers || []} />;
+
+  return <CustomersClient salonId={salon.id} initialCustomers={customers || []} />;
 }

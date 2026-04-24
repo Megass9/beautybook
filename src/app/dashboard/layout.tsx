@@ -22,7 +22,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const serializedSalon = JSON.parse(JSON.stringify(salon));
 
   return (
-    <div className="flex h-screen bg-[#fdf8f2] overflow-hidden">
+    <div className="flex h-screen bg-stone-50/50 overflow-hidden">
       <DashboardSidebar salon={serializedSalon} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader salon={serializedSalon} user={serializedUser} />

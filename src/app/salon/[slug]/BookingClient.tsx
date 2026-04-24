@@ -7,7 +7,7 @@ import {
 import { tr } from "date-fns/locale";
 import {
   Calendar, Clock, Scissors, User, ChevronRight, Check,
-  ArrowLeft, Loader2, AlertCircle
+  ArrowLeft, Loader2, AlertCircle, Quote
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
@@ -22,7 +22,6 @@ interface Props {
 }
 
 export default function BookingClient({ salonId, services, staffList, workingHours }: Props) {
-  // supabase istemcisini ref ile tut — her render'da yeniden oluşmasın
   const supabaseRef = useRef(createClient() as any);
   const supabase = supabaseRef.current;
 
@@ -35,7 +34,6 @@ export default function BookingClient({ salonId, services, staffList, workingHou
   const [customerForm, setCustomerForm] = useState({ name: "", phone: "", note: "" });
   const [busySlots, setBusySlots] = useState<string[]>([]);
 
-  // Çalışma saatlerinden saat dilimleri
   const timeSlots = useMemo(() => {
     const slots: string[] = [];
     const dayOfWeek = selectedDate.getDay();
@@ -55,7 +53,6 @@ export default function BookingClient({ salonId, services, staffList, workingHou
     return slots;
   }, [workingHours, selectedDate]);
 
-  // Dolu saatleri çek
   useEffect(() => {
     if (!selectedStaff?.id || !salonId) return;
     const dateStr = format(selectedDate, "yyyy-MM-dd");
@@ -69,33 +66,30 @@ export default function BookingClient({ salonId, services, staffList, workingHou
       .then(({ data }: any) => {
         if (data) setBusySlots(data.map((a: any) => a.start_time.slice(0, 5)));
       });
-  }, [selectedStaff?.id, selectedDate, salonId]); // supabase yok — ref sabit
+  }, [selectedStaff?.id, selectedDate, salonId]);
 
-  // Seçili hizmeti yapabilen personeller
-  // Eğer staff_services verisi yoksa tüm personeli göster (fallback)
   const availableStaff = useMemo(() => {
     if (!selectedService) return [];
     const withService = staffList.filter((s: any) =>
       s.staff_services?.some((ss: any) => ss.service_id === selectedService.id)
     );
-    // staff_services join'i gelmemişse herkesi göster
     return withService.length > 0 ? withService : staffList;
   }, [selectedService, staffList]);
 
   const getAvatarColor = (name: string) => {
     const colors = [
-      "bg-rose-100 text-rose-600",
-      "bg-blue-100 text-blue-600",
-      "bg-emerald-100 text-emerald-600",
-      "bg-amber-100 text-amber-600",
-      "bg-purple-100 text-purple-600",
+      "bg-rose-50 text-rose-600 border-rose-100",
+      "bg-emerald-50 text-emerald-600 border-emerald-100",
+      "bg-blue-50 text-blue-600 border-blue-100",
+      "bg-amber-50 text-amber-600 border-amber-100",
+      "bg-purple-50 text-purple-600 border-purple-100",
     ];
     return colors[name.charCodeAt(0) % colors.length];
   };
 
   const handleSubmit = async () => {
     if (!customerForm.name || !customerForm.phone) {
-      toast.error("Lütfen ad ve telefon giriniz");
+      toast.error("Lütfen ad ve telefon bölümünü doldurun.");
       return;
     }
     setLoading(true);
@@ -141,7 +135,6 @@ export default function BookingClient({ salonId, services, staffList, workingHou
       if (aptError) throw aptError;
 
       setStep("success");
-      toast.success("Randevu talebiniz alındı!");
     } catch (error: any) {
       console.error(error);
       toast.error("Bir hata oluştu: " + error.message);
@@ -150,324 +143,364 @@ export default function BookingClient({ salonId, services, staffList, workingHou
     }
   };
 
-  // Success ekranı
   if (step === "success") {
     return (
-      <div className="text-center py-8">
-        <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-5">
-          <Check className="w-8 h-8 text-emerald-600" />
+      <div className="text-center py-10 px-4 animate-fade-up">
+        <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 relative">
+          <div className="absolute inset-0 border-4 border-emerald-100 rounded-full animate-ping opacity-50" />
+          <Check className="w-10 h-10 text-emerald-500 relative z-10" />
         </div>
-        <h3 className="text-xl font-bold text-stone-900 mb-2">Randevu Alındı!</h3>
-        <p className="text-stone-500 text-sm mb-6">
-          Talebiniz iletildi. Onaylandığında bilgilendirme yapılacaktır.
+        <h3 className="text-2xl font-extrabold text-stone-900 mb-2 tracking-tight">Randevunuz Alındı!</h3>
+        <p className="text-stone-500 text-sm mb-8 max-w-sm mx-auto">
+          Talebiniz salonumuza başarıyla iletildi. En kısa sürede sizinle iletişime geçeceğiz.
         </p>
-        <div className="bg-stone-50 rounded-2xl p-4 text-left mb-6 space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-stone-400">Tarih</span>
-            <span className="font-semibold text-stone-900">
+        <div className="bg-stone-50 border border-stone-200/60 rounded-[2rem] p-6 text-left mb-8 space-y-4 max-w-sm mx-auto shadow-sm">
+          <div className="flex justify-between items-center border-b border-stone-200/60 pb-4">
+            <span className="text-[10px] font-extrabold text-stone-400 uppercase tracking-widest">Tarih & Saat</span>
+            <span className="font-bold text-stone-900 text-sm">
               {format(selectedDate, "d MMMM yyyy", { locale: tr })} {selectedTime}
             </span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-stone-400">Hizmet</span>
-            <span className="font-semibold text-stone-900">{selectedService?.name}</span>
+          <div className="flex justify-between items-center border-b border-stone-200/60 pb-4">
+            <span className="text-[10px] font-extrabold text-stone-400 uppercase tracking-widest">Hizmet</span>
+            <span className="font-bold text-stone-900 text-sm">{selectedService?.name}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-stone-400">Personel</span>
-            <span className="font-semibold text-stone-900">{selectedStaff?.name}</span>
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-extrabold text-stone-400 uppercase tracking-widest">Uzman</span>
+            <span className="font-bold text-stone-900 text-sm">{selectedStaff?.name}</span>
           </div>
         </div>
         <button
           onClick={() => window.location.reload()}
-          className="w-full bg-stone-900 text-white font-bold py-3 rounded-xl text-sm"
+          className="w-full max-w-sm mx-auto bg-stone-900 hover:bg-black text-white font-bold py-4 rounded-xl text-sm transition-all shadow-lg hover:-translate-y-0.5"
         >
-          Yeni Randevu Al
+          Yeni Bir Randevu Daha Al
         </button>
       </div>
     );
   }
 
   const STEPS = [
-    { id: "service", label: "Hizmet", icon: Scissors },
-    { id: "staff", label: "Personel", icon: User },
-    { id: "datetime", label: "Tarih & Saat", icon: Calendar },
-    { id: "info", label: "Bilgiler", icon: Check },
+    { id: "service", label: "Hizmet" },
+    { id: "staff", label: "Uzman" },
+    { id: "datetime", label: "Zaman" },
+    { id: "info", label: "Onay" },
   ];
   const currentIdx = STEPS.findIndex(s => s.id === step);
 
   return (
-    <div>
-      {/* Progress Bar */}
-      <div className="flex items-center gap-2 mb-8">
+    <div className="animate-fade-in">
+      {/* ── PROGRESS BAR ── */}
+      <div className="flex items-center justify-between mb-8 sm:mb-10 relative">
+        <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1 bg-stone-100 rounded-full z-0" />
+        <div 
+          className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-rose-500 rounded-full z-0 transition-all duration-500 ease-out"
+          style={{ width: `${(currentIdx / (STEPS.length - 1)) * 100}%` }}
+        />
+        
         {STEPS.map((s, idx) => {
           const isActive = s.id === step;
           const isPast = currentIdx > idx;
           return (
-            <div key={s.id} className="flex items-center flex-1 last:flex-none">
-              <div className={`flex items-center gap-1.5 text-xs font-semibold transition-colors ${
-                isActive ? "text-rose-600" : isPast ? "text-stone-400" : "text-stone-300"
+            <div key={s.id} className="relative z-10 flex flex-col items-center gap-2">
+              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all duration-300 ${
+                isActive ? "bg-rose-600 text-white shadow-lg shadow-rose-200 ring-4 ring-rose-50 scale-110" :
+                isPast ? "bg-rose-500 text-white" :
+                "bg-white text-stone-400 border-2 border-stone-200"
               }`}>
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center border transition-all shrink-0 ${
-                  isActive ? "bg-rose-600 text-white border-rose-600" :
-                  isPast ? "bg-stone-200 text-stone-500 border-stone-200" :
-                  "border-stone-200 text-stone-300"
-                }`}>
-                  {isPast ? <Check className="w-3 h-3" /> : <s.icon className="w-3 h-3" />}
-                </div>
-                <span className="hidden sm:block">{s.label}</span>
+                {isPast ? <Check className="w-4 h-4 sm:w-5 sm:h-5" /> : idx + 1}
               </div>
-              {idx < STEPS.length - 1 && (
-                <div className={`flex-1 h-px mx-2 transition-colors ${isPast ? "bg-rose-200" : "bg-stone-100"}`} />
-              )}
+              <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors absolute -bottom-6 whitespace-nowrap ${
+                isActive ? "text-rose-600" : isPast ? "text-stone-700" : "text-stone-400"
+              }`}>
+                {s.label}
+              </span>
             </div>
           );
         })}
       </div>
 
-      {/* Geri butonu */}
-      {step !== "service" && (
-        <button
-          onClick={() => {
-            if (step === "info") setStep("datetime");
-            else if (step === "datetime") setStep("staff");
-            else if (step === "staff") setStep("service");
-          }}
-          className="mb-5 flex items-center gap-1.5 text-sm text-stone-400 hover:text-stone-700 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" /> Geri
-        </button>
-      )}
+      <div className="mt-12 sm:mt-14">
+        {/* ── BACK BUTTON ── */}
+        {step !== "service" && (
+          <button
+            onClick={() => {
+              if (step === "info") setStep("datetime");
+              else if (step === "datetime") setStep("staff");
+              else if (step === "staff") setStep("service");
+            }}
+            className="mb-6 flex items-center gap-1.5 text-xs font-bold text-stone-500 hover:text-stone-900 transition-colors uppercase tracking-widest bg-stone-100 hover:bg-stone-200 px-4 py-2 rounded-xl w-max"
+          >
+            <ArrowLeft className="w-4 h-4" /> Geri Dön
+          </button>
+        )}
 
-      {/* ADIM 1: HİZMET */}
-      {step === "service" && (
-        <div>
-          <h3 className="text-lg font-bold text-stone-900 mb-1">Hizmet Seçin</h3>
-          <p className="text-sm text-stone-400 mb-5">Almak istediğiniz hizmeti seçiniz.</p>
-          {services.length === 0 ? (
-            <div className="text-center py-8 text-stone-400 text-sm">
-              Bu salonda henüz hizmet tanımlanmamış.
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 gap-3">
-              {services.map((service: any) => (
-                <button
-                  key={service.id}
-                  onClick={() => { setSelectedService(service); setStep("staff"); }}
-                  className="text-left border border-stone-200 rounded-2xl p-4 hover:border-rose-300 hover:shadow-md hover:bg-rose-50/30 cursor-pointer transition-all group"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-semibold text-stone-900 text-sm group-hover:text-rose-600 transition-colors">
-                      {service.name}
-                    </span>
-                    <span className="font-bold text-rose-600 text-sm ml-2 shrink-0">₺{service.price}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-stone-400">
-                    <span className="flex items-center gap-1 bg-stone-50 px-2 py-0.5 rounded-lg">
-                      <Clock className="w-3 h-3" /> {service.duration_minutes} dk
-                    </span>
-                    {service.category && (
-                      <span className="bg-rose-50 text-rose-500 px-2 py-0.5 rounded-lg">{service.category}</span>
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ADIM 2: PERSONEL */}
-      {step === "staff" && (
-        <div>
-          <h3 className="text-lg font-bold text-stone-900 mb-1">Personel Seçin</h3>
-          <p className="text-sm text-stone-400 mb-5">İşlemi yapacak uzmanı seçiniz.</p>
-          {availableStaff.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="bg-amber-50 text-amber-700 p-4 rounded-xl flex items-center gap-3 text-sm justify-center mb-4">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                Bu hizmet için uygun personel bulunamadı.
+        {/* ── STEP 1: SERVICE ── */}
+        {step === "service" && (
+          <div className="animate-fade-up">
+            <h3 className="text-2xl font-black text-stone-900 mb-2 tracking-tight">Hangi işlemi yaptırmak istersiniz?</h3>
+            <p className="text-sm font-medium text-stone-500 mb-6">Lütfen randevu almak istediğiniz hizmeti seçin.</p>
+            
+            {services.length === 0 ? (
+              <div className="text-center py-12 bg-stone-50 rounded-[2.5rem] border border-stone-200/60">
+                <Scissors className="w-10 h-10 text-stone-300 mx-auto mb-3" />
+                <p className="text-stone-500 font-bold">Bu salonda randevu alınabilecek hizmet bulunmuyor.</p>
               </div>
-              <button onClick={() => setStep("service")} className="text-sm text-rose-600 hover:underline">
-                Farklı bir hizmet seç
-              </button>
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 gap-3">
-              {availableStaff.map((s: any) => (
-                <button
-                  key={s.id}
-                  onClick={() => { setSelectedStaff(s); setStep("datetime"); }}
-                  className="flex items-center gap-3 border border-stone-200 rounded-2xl p-4 hover:border-rose-300 hover:shadow-md hover:bg-rose-50/30 cursor-pointer transition-all text-left"
-                >
-                  <div className={`w-11 h-11 rounded-full flex items-center justify-center text-base font-bold shrink-0 ${getAvatarColor(s.name)}`}>
-                    {s.image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={s.image_url} alt={s.name} className="w-full h-full object-cover rounded-full" />
-                    ) : (
-                      s.name.substring(0, 2).toUpperCase()
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-stone-900 text-sm">{s.name}</p>
-                    <p className="text-xs text-stone-400">{s.role || "Uzman"}</p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-stone-300 shrink-0" />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ADIM 3: TARİH & SAAT */}
-      {step === "datetime" && (
-        <div>
-          <h3 className="text-lg font-bold text-stone-900 mb-1">Tarih & Saat Seçin</h3>
-          <p className="text-sm text-stone-400 mb-5">Size uygun gün ve saati belirleyin.</p>
-          <div className="flex gap-2 overflow-x-auto pb-3 mb-5 scrollbar-hide">
-            {Array.from({ length: 14 }).map((_, i) => {
-              const d = addDays(new Date(), i);
-              const isSelected = isSameDay(d, selectedDate);
-              const dayOfWeek = d.getDay();
-              const dayHours = workingHours.find((h: any) => h.day_of_week === dayOfWeek);
-              const isClosed = dayHours?.is_closed;
-              return (
-                <button
-                  key={i}
-                  disabled={!!isClosed}
-                  onClick={() => { setSelectedDate(d); setSelectedTime(null); }}
-                  className={`flex-shrink-0 w-14 rounded-2xl flex flex-col items-center justify-center gap-1 py-3 border transition-all ${
-                    isSelected
-                      ? "bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-200"
-                      : isClosed
-                      ? "bg-stone-50 text-stone-300 border-stone-100 cursor-not-allowed"
-                      : "bg-white text-stone-600 border-stone-200 hover:border-rose-300 hover:bg-rose-50"
-                  }`}
-                >
-                  <span className="text-[10px] font-medium uppercase">{format(d, "EEE", { locale: tr })}</span>
-                  <span className="text-lg font-black">{format(d, "d")}</span>
-                  {isClosed && <span className="text-[9px] text-stone-300">Kapalı</span>}
-                </button>
-              );
-            })}
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-4">
+                {services.map((service: any) => (
+                  <button
+                    key={service.id}
+                    onClick={() => { setSelectedService(service); setStep("staff"); }}
+                    className="text-left bg-white border border-stone-200/80 rounded-[2rem] p-5 hover:border-rose-300 hover:shadow-[0_8px_30px_rgba(225,29,72,0.08)] hover:bg-rose-50/10 cursor-pointer transition-all duration-300 group flex flex-col h-full relative overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-rose-100 to-rose-50 opacity-0 group-hover:opacity-100 rounded-bl-full transition-opacity duration-500 z-0" />
+                    
+                    <div className="relative z-10 flex justify-between items-start mb-3">
+                      <span className="font-extrabold text-stone-900 text-lg group-hover:text-rose-600 transition-colors pr-2">
+                        {service.name}
+                      </span>
+                      <span className="font-black text-stone-900 text-lg bg-stone-100 px-3 py-1 rounded-xl shrink-0 group-hover:bg-rose-100 group-hover:text-rose-700 transition-colors">₺{service.price}</span>
+                    </div>
+                    
+                    <div className="relative z-10 mt-auto flex items-center justify-between pt-4 border-t border-stone-100 group-hover:border-rose-100/50 transition-colors">
+                      <span className="flex items-center gap-1.5 bg-stone-50 border border-stone-200 px-3 py-1.5 rounded-xl text-xs font-bold text-stone-500 group-hover:bg-white transition-colors">
+                        <Clock className="w-3.5 h-3.5" /> {service.duration_minutes} Dakika
+                      </span>
+                      <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center group-hover:bg-rose-600 transition-colors">
+                        <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-white transition-colors" />
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-          {timeSlots.length === 0 ? (
-            <div className="text-center py-6 text-stone-400 text-sm">Bu gün için müsait saat bulunmuyor.</div>
-          ) : (
-            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-              {timeSlots.map(time => {
-                const isBusy = busySlots.includes(time);
-                const isSelected = selectedTime === time;
+        )}
+
+        {/* ── STEP 2: STAFF ── */}
+        {step === "staff" && (
+          <div className="animate-fade-up">
+            <h3 className="text-2xl font-black text-stone-900 mb-2 tracking-tight">Hangi uzmanı tercih edersiniz?</h3>
+            <p className="text-sm font-medium text-stone-500 mb-6">İşleminizi gerçekleştirecek ekip üyemizi seçin.</p>
+            
+            {availableStaff.length === 0 ? (
+              <div className="text-center py-12 bg-amber-50 rounded-[2.5rem] border border-amber-100">
+                <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-3" />
+                <p className="text-amber-800 font-bold mb-3">Bu işlem için uygun uzman bulunamadı.</p>
+                <button onClick={() => setStep("service")} className="text-sm font-bold text-amber-700 underline underline-offset-4 hover:text-amber-900">
+                  Farklı bir hizmet seçin
+                </button>
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-4">
+                {availableStaff.map((s: any) => (
+                  <button
+                    key={s.id}
+                    onClick={() => { setSelectedStaff(s); setStep("datetime"); }}
+                    className="flex items-center gap-4 bg-white border border-stone-200/80 rounded-[2.5rem] p-4 pr-6 hover:border-rose-300 hover:shadow-[0_8px_30px_rgba(225,29,72,0.08)] cursor-pointer transition-all duration-300 text-left group relative overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-rose-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-0" />
+                    
+                    <div className={`w-16 h-16 rounded-[1.5rem] border shadow-inner flex items-center justify-center text-xl font-black shrink-0 relative z-10 ${getAvatarColor(s.name)}`}>
+                      {s.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={s.image_url} alt={s.name} className="w-full h-full object-cover rounded-[1.5rem]" />
+                      ) : (
+                        s.name.substring(0, 1).toUpperCase()
+                      )}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0 relative z-10">
+                      <p className="font-extrabold text-stone-900 text-lg group-hover:text-rose-700 transition-colors">{s.name}</p>
+                      <p className="text-xs font-semibold text-stone-400 mt-0.5">{s.role || "Güzellik Uzmanı"}</p>
+                    </div>
+                    
+                    <div className="relative z-10 w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center group-hover:bg-rose-600 transition-colors shrink-0">
+                      <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-white transition-colors" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── STEP 3: DATETIME ── */}
+        {step === "datetime" && (
+          <div className="animate-fade-up">
+            <h3 className="text-2xl font-black text-stone-900 mb-2 tracking-tight">Tarih ve Saat</h3>
+            <p className="text-sm font-medium text-stone-500 mb-6">Size en uygun zaman dilimini seçin.</p>
+            
+            <div className="flex gap-3 overflow-x-auto pb-6 mb-2 hide-scroll">
+              {Array.from({ length: 14 }).map((_, i) => {
+                const d = addDays(new Date(), i);
+                const isSelected = isSameDay(d, selectedDate);
+                const dayOfWeek = d.getDay();
+                const dayHours = workingHours.find((h: any) => h.day_of_week === dayOfWeek);
+                const isClosed = dayHours?.is_closed;
                 return (
                   <button
-                    key={time}
-                    disabled={isBusy}
-                    onClick={() => setSelectedTime(time)}
-                    className={`py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                    key={i}
+                    disabled={!!isClosed}
+                    onClick={() => { setSelectedDate(d); setSelectedTime(null); }}
+                    className={`flex-shrink-0 w-20 rounded-[2rem] flex flex-col items-center justify-center gap-1.5 py-5 border-2 transition-all duration-300 ${
                       isSelected
-                        ? "bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-200"
-                        : isBusy
-                        ? "bg-stone-50 text-stone-300 border-transparent cursor-not-allowed line-through"
-                        : "bg-white text-stone-700 border-stone-200 hover:border-rose-300 hover:bg-rose-50"
+                        ? "bg-rose-600 text-white border-rose-600 shadow-[0_8px_20px_rgba(225,29,72,0.3)] transform -translate-y-1"
+                        : isClosed
+                        ? "bg-stone-50 text-stone-300 border-stone-100 cursor-not-allowed opacity-60"
+                        : "bg-white text-stone-600 border-stone-200/80 hover:border-rose-300 hover:bg-rose-50"
                     }`}
                   >
-                    {time}
+                    <span className={`text-[10px] font-extrabold uppercase tracking-wider ${isSelected ? 'text-rose-100' : 'text-stone-400'}`}>
+                      {format(d, "EEE", { locale: tr })}
+                    </span>
+                    <span className="text-2xl font-black tracking-tighter">
+                      {format(d, "d")}
+                    </span>
+                    {isClosed && <span className="text-[9px] font-bold text-stone-400 bg-white border border-stone-200 px-2 py-0.5 rounded-md mt-1">KAPALI</span>}
                   </button>
                 );
               })}
             </div>
-          )}
-          <div className="mt-6 flex justify-end">
-            <button
-              disabled={!selectedTime}
-              onClick={() => setStep("info")}
-              className="bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 px-7 rounded-xl transition-all flex items-center gap-2 text-sm"
-            >
-              Devam Et <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
 
-      {/* ADIM 4: BİLGİLER */}
-      {step === "info" && (
-        <div>
-          <h3 className="text-lg font-bold text-stone-900 mb-1">Bilgilerinizi Girin</h3>
-          <p className="text-sm text-stone-400 mb-5">Randevuyu tamamlamak için bilgilerinizi giriniz.</p>
-          <div className="space-y-4 mb-6">
-            <div>
-              <label className="block text-xs font-bold text-stone-600 mb-1.5 uppercase tracking-wide">Ad Soyad</label>
-              <input
-                type="text"
-                placeholder="Adınız ve Soyadınız"
-                value={customerForm.name}
-                onChange={e => setCustomerForm({ ...customerForm, name: e.target.value })}
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-300 transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-stone-600 mb-1.5 uppercase tracking-wide">Telefon</label>
-              <input
-                type="tel"
-                placeholder="05XX XXX XX XX"
-                value={customerForm.phone}
-                onChange={e => setCustomerForm({ ...customerForm, phone: e.target.value })}
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-300 transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-stone-600 mb-1.5 uppercase tracking-wide">
-                Not <span className="text-stone-300 font-normal normal-case">(opsiyonel)</span>
-              </label>
-              <textarea
-                rows={2}
-                placeholder="Özel istekleriniz..."
-                value={customerForm.note}
-                onChange={e => setCustomerForm({ ...customerForm, note: e.target.value })}
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-300 transition-all resize-none"
-              />
-            </div>
-          </div>
-          <div className="bg-rose-50 border border-rose-100 rounded-2xl p-5 mb-6">
-            <p className="text-xs font-bold text-rose-700 uppercase tracking-widest mb-3">Randevu Özeti</p>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-rose-600">Hizmet</span>
-                <span className="font-semibold text-stone-900">{selectedService?.name}</span>
+            {timeSlots.length === 0 ? (
+              <div className="text-center py-12 bg-stone-50 rounded-[2.5rem] border border-stone-200/60">
+                <Clock className="w-10 h-10 text-stone-300 mx-auto mb-3" />
+                <p className="text-stone-500 font-bold">Bu gün için uygun bir randevu saati bulunmuyor.</p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-rose-600">Personel</span>
-                <span className="font-semibold text-stone-900">{selectedStaff?.name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-rose-600">Tarih & Saat</span>
-                <span className="font-semibold text-stone-900">
-                  {format(selectedDate, "d MMM yyyy", { locale: tr })} {selectedTime}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-rose-600">Süre</span>
-                <span className="font-semibold text-stone-900">{selectedService?.duration_minutes} dk</span>
-              </div>
-              <div className="pt-2 border-t border-rose-200 flex justify-between font-bold text-base">
-                <span className="text-stone-900">Toplam</span>
-                <span className="text-rose-600">₺{selectedService?.price}</span>
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="w-full bg-rose-600 hover:bg-rose-700 disabled:bg-rose-400 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-rose-200/60 flex items-center justify-center gap-2 text-sm"
-          >
-            {loading ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> İşleniyor...</>
             ) : (
-              <>Randevuyu Onayla</>
+              <div className="bg-white rounded-[2.5rem] border border-stone-200/60 shadow-[0_4px_25px_rgba(0,0,0,0.02)] p-6 sm:p-8">
+                <p className="text-xs font-extrabold text-stone-400 uppercase tracking-widest mb-4">Uygun Saatler</p>
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                  {timeSlots.map(time => {
+                    const isBusy = busySlots.includes(time);
+                    const isSelected = selectedTime === time;
+                    return (
+                      <button
+                        key={time}
+                        disabled={isBusy}
+                        onClick={() => setSelectedTime(time)}
+                        className={`py-3.5 rounded-[1.5rem] text-sm font-bold transition-all duration-300 ${
+                          isSelected
+                            ? "bg-rose-600 text-white shadow-[0_8px_20px_rgba(225,29,72,0.3)] transform scale-105"
+                            : isBusy
+                            ? "bg-stone-50 text-stone-300 cursor-not-allowed line-through relative overflow-hidden"
+                            : "bg-stone-50 text-stone-700 hover:bg-white hover:text-rose-600 border border-stone-200 hover:border-rose-300"
+                        }`}
+                      >
+                        {time}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             )}
-          </button>
-        </div>
-      )}
+
+            <div className="mt-8">
+              <button
+                disabled={!selectedTime}
+                onClick={() => setStep("info")}
+                className="w-full sm:w-auto bg-stone-900 hover:bg-black disabled:bg-stone-200 disabled:text-stone-400 text-white font-bold py-4 px-10 rounded-2xl transition-all shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2 text-base mx-auto sm:ml-auto sm:mr-0 disabled:shadow-none disabled:translate-y-0"
+              >
+                Bilgileri Gir <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 4: INFO ── */}
+        {step === "info" && (
+          <div className="animate-fade-up">
+            <h3 className="text-2xl font-black text-stone-900 mb-2 tracking-tight">Son Adım: İletişim Bilgileri</h3>
+            <p className="text-sm font-medium text-stone-500 mb-6">Randevunuzu tamamlamak için bilgilerinizi giriniz.</p>
+            
+            <div className="grid md:grid-cols-[1fr_350px] gap-8">
+              
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-xs font-extrabold text-stone-500 uppercase tracking-widest mb-2">Ad Soyad</label>
+                  <input
+                    type="text"
+                    placeholder="Adınız ve Soyadınız"
+                    value={customerForm.name}
+                    onChange={e => setCustomerForm({ ...customerForm, name: e.target.value })}
+                    className="w-full bg-white border border-stone-200/80 rounded-2xl px-5 py-4 text-sm font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-100/50 shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-extrabold text-stone-500 uppercase tracking-widest mb-2">Telefon</label>
+                  <input
+                    type="tel"
+                    placeholder="05XX XXX XX XX"
+                    value={customerForm.phone}
+                    onChange={e => setCustomerForm({ ...customerForm, phone: e.target.value })}
+                    className="w-full bg-white border border-stone-200/80 rounded-2xl px-5 py-4 text-sm font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-100/50 shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-all"
+                  />
+                </div>
+                <div className="relative">
+                  <label className="block text-xs font-extrabold text-stone-500 uppercase tracking-widest mb-2">Not <span className="text-stone-300 font-medium normal-case">(İsteğe bağlı)</span></label>
+                  <textarea
+                    rows={3}
+                    placeholder="Salon uzmanına iletmek istediğiniz notlar..."
+                    value={customerForm.note}
+                    onChange={e => setCustomerForm({ ...customerForm, note: e.target.value })}
+                    className="w-full bg-white border border-stone-200/80 rounded-2xl px-5 py-4 pl-12 text-sm font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-100/50 shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-all resize-none"
+                  />
+                  <Quote className="absolute left-4 top-10 w-5 h-5 text-stone-300" />
+                </div>
+              </div>
+
+              <div>
+                <div className="bg-stone-50 border border-stone-200/60 rounded-[2.5rem] p-6 shadow-sm sticky top-6">
+                  <p className="text-xs font-black text-stone-900 uppercase tracking-widest mb-5 flex items-center gap-2">
+                    <Check className="w-4 h-4 text-rose-500" /> Randevu Özeti
+                  </p>
+                  
+                  <div className="space-y-4">
+                     <div className="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm">
+                       <p className="text-[10px] font-extrabold text-stone-400 uppercase tracking-widest mb-1">Hizmet</p>
+                       <p className="text-sm font-black text-stone-900">{selectedService?.name}</p>
+                     </div>
+                     <div className="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm">
+                       <p className="text-[10px] font-extrabold text-stone-400 uppercase tracking-widest mb-1">Uzman</p>
+                       <p className="text-sm font-black text-stone-900">{selectedStaff?.name}</p>
+                     </div>
+                     <div className="bg-rose-600 rounded-2xl p-4 shadow-md text-white">
+                       <p className="text-[10px] font-extrabold text-rose-200 uppercase tracking-widest mb-1">Tarih & Saat</p>
+                       <p className="text-sm font-black text-white">{format(selectedDate, "d MMMM yyyy", { locale: tr })} — {selectedTime}</p>
+                     </div>
+                  </div>
+
+                  <div className="mt-6 pt-6 border-t border-stone-200/80 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-extrabold text-stone-400 uppercase tracking-widest">Süre</p>
+                      <p className="text-sm font-bold text-stone-900">{selectedService?.duration_minutes} Dk</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-extrabold text-stone-400 uppercase tracking-widest">Toplam</p>
+                      <p className="text-2xl font-black text-stone-900">₺{selectedService?.price}</p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    className="w-full mt-6 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-400 text-white font-bold py-4 rounded-xl transition-all shadow-[0_8px_20px_rgba(225,29,72,0.25)] hover:shadow-[0_10px_25px_rgba(225,29,72,0.35)] flex items-center justify-center gap-2 text-sm"
+                  >
+                    {loading ? (
+                      <><Loader2 className="w-5 h-5 animate-spin" /> İşleminiz yapılıyor...</>
+                    ) : (
+                      <>Randevuyu Onayla <ChevronRight className="w-4 h-4" /></>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

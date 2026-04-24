@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Plus, X, Pencil, Trash2, Users, Phone, Mail, Key, Copy, Check, UserCheck } from 'lucide-react'
+import { Plus, X, Pencil, Trash2, Users, Phone, Mail, Key, Copy, Check, UserCheck, Shield, Sparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 import type { Staff, Service } from '@/types'
@@ -81,7 +81,7 @@ export function StaffClient({
 
         setStaff(s => s.map(x => x.id === editing.id ? data : x))
         staffId = editing.id
-        toast.success('Personel güncellendi')
+        toast.success('Personel başarıyla güncellendi')
       } else {
         const result = await createStaffAction(salonId, form, selectedServices)
 
@@ -93,11 +93,11 @@ export function StaffClient({
 
         setCredentials(result.credentials)
         setShowCredModal(true);
-        toast.success('Personel eklendi')
+        toast.success('Yeni personel başarıyla eklendi')
       }
 
       // Update staff services
-      if (editing) { // For new staff, services are handled in the server action
+      if (editing) { 
         await supabase.from('staff_services').delete().eq('staff_id', staffId)
         if (selectedServices.length > 0) {
           const { error: ssError } = await supabase.from('staff_services').insert(selectedServices.map(sid => ({ staff_id: staffId, service_id: sid })))
@@ -119,7 +119,7 @@ export function StaffClient({
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Personel silinsin mi?')) return
+    if (!confirm('Personel sistemden tamamen silinecek, onaylıyor musunuz?')) return
     const { error } = await supabase.from('staff').delete().eq('id', id)
     if (error) { toast.error(error.message); return }
     setStaff(s => s.filter(x => x.id !== id))
@@ -128,7 +128,7 @@ export function StaffClient({
 
   const copyCredentials = () => {
     if (!credentials) return;
-    const text = `Giriş sayfası: ${window.location.origin}/staff-portal/login\nE-posta: ${credentials.email}\nŞifre: ${credentials.password}`;
+    const text = `Giriş adresi: ${window.location.origin}/staff-portal/login\nE-posta: ${credentials.email}\nŞifre: ${credentials.password}`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -137,59 +137,109 @@ export function StaffClient({
   const getStaffServices = (staffId: string) => staffServices.filter(ss => ss.staff_id === staffId).map(ss => services.find(s => s.id === ss.service_id)?.name).filter(Boolean)
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-7xl mx-auto space-y-8 animate-fade-up pb-10">
+      
+      {/* ── HEADER ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold text-charcoal-900">Personel</h1>
-          <p className="text-charcoal-500 text-sm mt-0.5">{staff.length} personel</p>
+          <h1 className="text-3xl font-black text-stone-900 tracking-tight">Personel Yönetimi</h1>
+          <p className="text-stone-500 text-sm mt-1">Ekibinizi yönetin, yetkilerini ve sundukları hizmetleri belirleyin.</p>
         </div>
-        <button onClick={openAdd} className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Personel Ekle
+        <button
+          onClick={openAdd}
+          className="self-start sm:self-auto flex items-center gap-2 bg-gradient-to-r from-stone-800 to-stone-900 hover:from-stone-900 hover:to-black text-white font-bold px-6 py-3 rounded-2xl text-sm transition-all shadow-[0_8px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_10px_25px_rgba(0,0,0,0.25)] hover:-translate-y-0.5 group"
+        >
+          <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300 text-stone-300" />
+          Personel Ekle
         </button>
       </div>
 
       {staff.length === 0 ? (
-        <div className="card p-16 text-center">
-          <Users className="w-12 h-12 text-sand-200 mx-auto mb-3" />
-          <p className="text-charcoal-500 mb-4">Henüz personel eklenmedi</p>
-          <button onClick={openAdd} className="btn-primary flex items-center gap-2 mx-auto">
-            <Plus className="w-4 h-4" /> Personel Ekle
+        /* ── EMPTY STATE ── */
+        <div className="bg-stone-50/50 rounded-[2.5rem] border border-stone-200/60 p-24 text-center shadow-sm flex flex-col items-center justify-center relative overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-stone-500/10 rounded-full blur-[80px]" />
+          <div className="w-24 h-24 bg-white border border-stone-200 rounded-[2rem] flex items-center justify-center mb-6 shadow-sm relative z-10 rotate-3">
+            <div className="absolute inset-0 border-4 border-stone-100 rounded-[2rem] animate-pulse opacity-50" />
+            <Users className="w-10 h-10 text-stone-300" />
+          </div>
+          <h3 className="font-extrabold text-stone-900 text-2xl mb-2 relative z-10">Ekibinizi Kurun</h3>
+          <p className="text-base text-stone-500 mb-8 max-w-md mx-auto relative z-10">
+            Müşterilerinize hizmet verebilmek için çalışma arkadaşlarınızı sisteme tanımlayın.
+          </p>
+          <button
+            onClick={openAdd}
+            className="inline-flex items-center gap-2 bg-stone-900 hover:bg-black text-white font-bold px-8 py-3.5 rounded-2xl transition-all shadow-lg hover:-translate-y-1 relative z-10"
+          >
+            <Plus className="w-5 h-5 text-stone-400" /> Ekibe Katıl
           </button>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {staff.map((s) => {
             const svcNames = getStaffServices(s.id)
             return (
-              <div key={s.id} className="card p-5 group hover:-translate-y-0.5 transition-all">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-rose-100 to-sand-100 rounded-2xl flex items-center justify-center text-xl font-bold text-rose-600">
-                    {s.name[0]}
+              <div key={s.id} className="bg-white rounded-[2rem] border border-stone-200/60 p-6 shadow-[0_2px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:border-stone-300 transition-all duration-300 group flex flex-col relative overflow-hidden">
+                {/* Background Glow */}
+                <div className="absolute top-0 right-0 w-32 h-32 opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-bl-full bg-gradient-to-br from-stone-400 to-stone-600" />
+
+                <div className="flex items-start justify-between mb-5 relative z-10">
+                  <div className="w-16 h-16 bg-gradient-to-br from-stone-100 to-stone-200 rounded-[1.5rem] flex items-center justify-center border border-white shadow-inner">
+                    <span className="text-2xl font-black text-stone-700">{s.name[0]?.toUpperCase() || "?"}</span>
                   </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button type="button" onClick={() => openEdit(s)} className="p-1.5 hover:bg-sand-100 rounded-lg">
-                      <Pencil className="w-3.5 h-3.5 text-charcoal-500" />
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => openEdit(s)} className="w-8 h-8 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-xl flex items-center justify-center transition-all shadow-sm" title="Düzenle">
+                      <Pencil className="w-3.5 h-3.5 text-stone-600" />
                     </button>
-                    <button type="button" onClick={() => handleDelete(s.id)} className="p-1.5 hover:bg-red-50 rounded-lg">
-                      <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                    <button type="button" onClick={() => handleDelete(s.id)} className="w-8 h-8 bg-white hover:bg-red-50 border border-stone-200 hover:border-red-200 rounded-xl flex items-center justify-center transition-all shadow-sm" title="Sil">
+                      <Trash2 className="w-3.5 h-3.5 text-stone-300 hover:text-red-500 transition-colors" />
                     </button>
                   </div>
                 </div>
-                <h3 className="font-semibold text-charcoal-900">{s.name}</h3>
-                <p className="text-sm text-rose-600 font-medium mb-3">{s.role}</p>
-                <div className="space-y-1.5">
-                  {s.phone && <p className="flex items-center gap-2 text-xs text-charcoal-400"><Phone className="w-3.5 h-3.5" />{s.phone}</p>}
-                  {s.email && <p className="flex items-center gap-2 text-xs text-charcoal-400"><Mail className="w-3.5 h-3.5" />{s.email}</p>}
+
+                <div className="relative z-10 flex-1">
+                  <h3 className="font-extrabold text-stone-900 text-lg mb-1 group-hover:text-stone-700 transition-colors">{s.name}</h3>
+                  <p className="text-sm font-bold text-rose-500 mb-4">{s.role || "Ünvan Belirtilmedi"}</p>
+                  
+                  <div className="space-y-2.5 mb-6">
+                    {s.phone && (
+                       <p className="flex items-center gap-2 text-xs font-semibold text-stone-500">
+                         <div className="w-6 h-6 rounded-lg bg-stone-50 border border-stone-100 flex items-center justify-center"><Phone className="w-3 h-3 text-stone-400" /></div>
+                         {s.phone}
+                       </p>
+                    )}
+                    {s.email && (
+                       <p className="flex items-center gap-2 text-xs font-semibold text-stone-500">
+                         <div className="w-6 h-6 rounded-lg bg-stone-50 border border-stone-100 flex items-center justify-center"><Mail className="w-3 h-3 text-stone-400" /></div>
+                         <span className="truncate">{s.email}</span>
+                       </p>
+                    )}
+                  </div>
+                  
+                  {svcNames.length > 0 && (
+                     <div className="mb-6 flex flex-wrap gap-1.5">
+                       {svcNames.slice(0, 3).map((sn, i) => (
+                         <span key={i} className="text-[10px] font-bold bg-stone-100 text-stone-600 px-2 py-1 rounded-lg">
+                           {sn}
+                         </span>
+                       ))}
+                       {svcNames.length > 3 && (
+                         <span className="text-[10px] font-bold bg-stone-50 text-stone-400 border border-stone-200 px-2 py-1 rounded-lg">
+                           +{svcNames.length - 3}
+                         </span>
+                       )}
+                     </div>
+                  )}
                 </div>
-                <div className="mt-3 pt-3 border-t border-sand-100 flex items-center justify-between">
+
+                <div className="mt-auto pt-4 border-t border-stone-100/80 flex items-center justify-between relative z-10">
                   <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${s.is_active ? 'bg-green-400' : 'bg-charcoal-300'}`} />
-                    <span className="text-xs text-charcoal-400">{s.is_active ? 'Aktif' : 'Pasif'}</span>
+                    <span className={`w-2.5 h-2.5 rounded-full ${s.is_active ? 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]' : 'bg-stone-300'}`} />
+                    <span className="text-xs font-bold text-stone-500">{s.is_active ? 'Aktif' : 'Pasif'}</span>
                   </div>
                   {s.auth_user_id && (
-                    <span className="text-xs flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 text-green-700">
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-[10px] font-bold shadow-sm">
                       <Key className="w-3 h-3" />
-                      Giriş aktif
+                      Giriş Yetkisi
                     </span>
                   )}
                 </div>
@@ -199,89 +249,147 @@ export function StaffClient({
         </div>
       )}
 
-      {/* Modal */}
+      {/* ── MODAL: ADD / EDIT STAFF ── */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <form onSubmit={handleSave} className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 animate-fade-up max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-display text-xl font-bold text-charcoal-900">{editing ? 'Personel Düzenle' : 'Yeni Personel'}</h2>
-              <button onClick={closeModal} className="p-2 rounded-xl hover:bg-sand-100"><X className="w-4 h-4" /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+          <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm transition-opacity" onClick={closeModal} />
+          <div className="relative bg-white w-full max-w-lg rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.15)] max-h-[92vh] flex flex-col overflow-hidden animate-fade-up">
+
+            {/* Modal header */}
+            <div className="bg-white border-b border-stone-100 px-8 py-6 flex items-center justify-between z-10 shrink-0">
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${editing ? 'bg-blue-50 text-blue-600' : 'bg-stone-100 text-stone-700'}`}>
+                   {editing ? <Pencil className="w-5 h-5" /> : <Users className="w-5 h-5" />}
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-stone-900 text-xl tracking-tight">
+                    {editing ? 'Personel Düzenle' : 'Yeni Personel Ekle'}
+                  </h3>
+                  <p className="text-xs font-semibold text-stone-500 mt-0.5">{editing ? "Mevcut personelin bilgilerini güncelleyin" : "Ekibe yeni bir çalışma arkadaşı ekleyin"}</p>
+                </div>
+              </div>
+              <button onClick={closeModal} className="w-10 h-10 bg-stone-50 hover:bg-stone-200 rounded-full flex items-center justify-center transition-colors">
+                <X className="w-5 h-5 text-stone-500" />
+              </button>
             </div>
-            <div className="space-y-4">
-              <div>
-                <label className="label">Ad Soyad *</label>
-                <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Personel adı"
-                  className="input" />
-              </div>
-              <div>
-                <label className="label">Ünvan</label>
-                <input type="text" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} placeholder="Örn: Kuaför, Uzman Estetisyen"
-                  className="input" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label">Telefon</label>
-                  <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="0532..."
-                    className="input" />
-                </div>
-                <div>
-                  <label className="label">E-posta</label>
-                  <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="ornek@mail.com"
-                    className="input" />
-                </div>
-              </div>
-              {!editing && (
-                <div>
-                  <label className="label">Şifre (isteğe bağlı)</label>
-                  <input type="text" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} placeholder="Boş bırakılırsa otomatik oluşturulur"
-                    className="input" />
-                </div>
-              )}
-              {services.length > 0 && (
-                <div>
-                  <label className="label mb-2">Hizmetler</label>
-                  <div className="flex flex-wrap gap-2">
-                    {services.map((svc) => (
-                      <button key={svc.id} type="button" onClick={() => toggleService(svc.id)}
-                        className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${selectedServices.includes(svc.id) ? 'bg-rose-500 text-white border-rose-500' : 'bg-sand-100 text-charcoal-600 border-sand-200 hover:border-rose-200'}`}>
-                        {svc.name}
-                      </button>
-                    ))}
+
+            <div className="overflow-y-auto p-8">
+              <form onSubmit={handleSave} className="space-y-6">
+                
+                {/* Name & Role */}
+                <div className="grid sm:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-xs font-extrabold text-stone-500 uppercase tracking-widest mb-2">Ad Soyad *</label>
+                    <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Personel Adı"
+                      className="w-full bg-white border border-stone-200/80 rounded-2xl px-5 py-4 text-sm font-bold text-stone-900 placeholder:text-stone-300 focus:outline-none focus:border-stone-400 focus:ring-4 focus:ring-stone-100/50 shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-all" required />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-extrabold text-stone-500 uppercase tracking-widest mb-2">Örn: Uzman Kuaför</label>
+                    <input type="text" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} placeholder="Ünvan (İsteğe bağlı)"
+                      className="w-full bg-white border border-stone-200/80 rounded-2xl px-5 py-4 text-sm font-medium text-stone-900 placeholder:text-stone-300 focus:outline-none focus:border-stone-400 focus:ring-4 focus:ring-stone-100/50 shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-all" />
                   </div>
                 </div>
-              )}
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={closeModal} className="flex-1 bg-sand-100 hover:bg-sand-200 text-charcoal-700 font-medium py-3 rounded-xl text-sm transition-all">İptal</button>
-                <button type="submit" disabled={loading} className="flex-1 bg-rose-500 hover:bg-rose-600 disabled:opacity-60 text-white font-semibold py-3 rounded-xl text-sm transition-all">
-                  {loading ? 'Kaydediliyor...' : (editing ? 'Güncelle' : 'Ekle')}
-                </button>
-              </div>
+
+                {/* Contact */}
+                <div className="grid sm:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-xs font-extrabold text-stone-500 uppercase tracking-widest mb-2">Telefon</label>
+                    <div className="relative">
+                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                      <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="0555..."
+                        className="w-full bg-white border border-stone-200/80 rounded-2xl pl-11 pr-4 py-4 text-sm text-stone-900 placeholder:text-stone-300 focus:outline-none focus:border-stone-400 focus:ring-4 focus:ring-stone-100/50 shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-all" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-extrabold text-stone-500 uppercase tracking-widest mb-2">E-posta</label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                      <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="ornek@mail.com"
+                        className="w-full bg-white border border-stone-200/80 rounded-2xl pl-11 pr-4 py-4 text-sm text-stone-900 placeholder:text-stone-300 focus:outline-none focus:border-stone-400 focus:ring-4 focus:ring-stone-100/50 shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-all" />
+                    </div>
+                  </div>
+                </div>
+
+                {!editing && (
+                  <div className="bg-stone-50 border border-stone-200 rounded-2xl p-5">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Shield className="w-4 h-4 text-stone-500" />
+                      <label className="text-sm font-extrabold text-stone-700">Giriş Şifresi <span className="text-stone-400 font-medium">(İsteğe bağlı)</span></label>
+                    </div>
+                    <input type="text" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} placeholder="Boş bırakırsanız sistem otomatik belirler..."
+                      className="w-full bg-white border border-stone-200/80 rounded-xl px-4 py-3 text-sm font-medium text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-100 shadow-sm transition-all" />
+                  </div>
+                )}
+
+                {services.length > 0 && (
+                  <div className="pt-2">
+                    <label className="block text-xs font-extrabold text-stone-500 uppercase tracking-widest mb-3">Verdiği Hizmetler</label>
+                    <div className="flex flex-wrap gap-2.5">
+                      {services.map((svc) => (
+                        <button key={svc.id} type="button" onClick={() => toggleService(svc.id)}
+                          className={`text-xs px-4 py-2.5 rounded-xl border-2 font-bold transition-all ${selectedServices.includes(svc.id) ? 'bg-rose-50 text-rose-700 border-rose-300 shadow-sm' : 'bg-white text-stone-500 border-stone-200 hover:border-stone-300 hover:bg-stone-50'}`}>
+                          {svc.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              </form>
             </div>
-          </form>
+            
+            <div className="bg-stone-50 border-t border-stone-200/60 p-6 flex gap-4 rounded-b-[2.5rem] shrink-0">
+              <button type="button" onClick={closeModal} className="w-1/3 bg-white border border-stone-200 hover:bg-stone-100 text-stone-700 font-bold py-4 rounded-2xl transition-all text-sm shadow-sm">
+                İptal Et
+              </button>
+              <button type="button" onClick={handleSave} disabled={loading} className="w-2/3 flex items-center justify-center gap-2 bg-gradient-to-r from-stone-800 to-stone-900 hover:from-stone-900 hover:to-black disabled:opacity-50 text-white font-bold py-4 rounded-2xl transition-all text-sm shadow-[0_8px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_10px_25px_rgba(0,0,0,0.25)] hover:-translate-y-0.5">
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Kayıt Sürüyor...
+                  </span>
+                ) : editing ? "Değişiklikleri Kaydet" : "Personeli Kaydet"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Credentials Modal */}
+      {/* ── MODAL: CREDENTIALS ── */}
       {showCredModal && credentials && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 animate-fade-up">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <UserCheck className="w-8 h-8" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+          <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm transition-opacity" />
+          <div className="relative bg-white w-full max-w-sm rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.25)] p-8 animate-fade-up border border-stone-100 text-center">
+            
+            <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 relative">
+              <div className="absolute inset-0 border-4 border-emerald-100 rounded-full animate-ping opacity-50" />
+              <UserCheck className="w-10 h-10 relative z-10" />
+            </div>
+            
+            <h2 className="font-extrabold text-stone-900 text-2xl tracking-tight mb-2">Başarıyla Eklendi!</h2>
+            <p className="text-sm font-medium text-stone-500 mb-6 leading-relaxed">Personelin sisteme giriş yapabilmesi için aşağıdaki bilgileri kendisine iletmeyi unutmayın.</p>
+            
+            <div className="space-y-3 text-left bg-stone-50 border border-stone-200/80 rounded-2xl p-5 mb-8">
+              <div>
+                <span className="block text-[10px] font-extrabold text-stone-400 uppercase tracking-widest mb-1">E-posta Adresi</span>
+                <span className="text-sm font-bold text-stone-900">{credentials.email}</span>
               </div>
-              <h2 className="font-display text-xl font-bold text-charcoal-900">Personel Oluşturuldu</h2>
-              <p className="text-sm text-charcoal-500 mt-2 mb-4">Personelin giriş bilgileri aşağıdadır. Lütfen bu bilgileri güvenli bir şekilde personele iletin.</p>
-              <div className="space-y-2 text-left bg-sand-50 border border-sand-200 rounded-xl p-4">
-                <p className="text-sm"><span className="font-medium text-charcoal-600">E-posta:</span> {credentials.email}</p>
-                <p className="text-sm"><span className="font-medium text-charcoal-600">Şifre:</span> {credentials.password}</p>
+              <div className="border-t border-stone-200" />
+              <div>
+                <span className="block text-[10px] font-extrabold text-stone-400 uppercase tracking-widest mb-1">Giriş Şifresi</span>
+                <span className="text-sm font-black text-rose-600 font-mono bg-rose-50 px-2 py-0.5 rounded-md inline-block">{credentials.password}</span>
               </div>
             </div>
-            <div className="flex gap-3 mt-6">
-              <button onClick={copyCredentials} className="btn-secondary flex-1 justify-center">
-                {copied ? <><Check className="w-4 h-4 text-green-500" /> Kopyalandı</> : <><Copy className="w-4 h-4" /> Kopyala</>}
+
+            <div className="flex flex-col gap-3">
+              <button onClick={copyCredentials} className="w-full flex items-center justify-center gap-2 bg-stone-900 hover:bg-black text-white font-bold py-3.5 rounded-xl transition-all shadow-md">
+                {copied ? <><Check className="w-4 h-4 text-emerald-400" /> Kopyalandı</> : <><Copy className="w-4 h-4 text-stone-400" /> Bilgileri Kopyala</>}
               </button>
-              <button onClick={() => setShowCredModal(false)} className="btn-primary flex-1 justify-center">Kapat</button>
+              <button onClick={() => setShowCredModal(false)} className="w-full flex items-center justify-center gap-2 bg-white border-2 border-stone-200 hover:bg-stone-50 text-stone-700 font-bold py-3.5 rounded-xl transition-all shadow-sm">
+                Pencereyi Kapat
+              </button>
             </div>
+
           </div>
         </div>
       )}

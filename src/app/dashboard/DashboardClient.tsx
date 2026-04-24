@@ -9,10 +9,14 @@ type AptRow = {
   start_time: string;
   end_time?: string;
   appointment_date: string;
-  appointment_date_formatted: string;
+  appointment_date_formatted?: string;
   customer: { name: string } | null;
   service: { name: string; price: number } | null;
   staff: { name: string } | null;
+};
+
+type PendingAptRow = AptRow & {
+  appointment_date_formatted: string;
 };
 
 type Props = {
@@ -21,7 +25,7 @@ type Props = {
   salonFirstName: string;
   todayFormatted: string;
   todayApts: AptRow[];
-  pendingApts: AptRow[];
+  pendingApts: PendingAptRow[];
   confirmedToday: number;
   pendingToday: number;
   completedToday: number;
@@ -249,6 +253,11 @@ export default function DashboardClient({
               <Link href="/dashboard/services" className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group hover:bg-purple-50">
                 <div className="w-7 h-7 rounded-lg bg-stone-100 group-hover:bg-white flex items-center justify-center"><Scissors className="w-3.5 h-3.5 text-purple-600" /></div>
                 <span className="text-sm font-medium text-stone-700 flex-1">Hizmetleri Düzenle</span>
+                <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-stone-500" />
+              </Link>
+              <Link href="/dashboard/notifications" className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group hover:bg-amber-50">
+                <div className="w-7 h-7 rounded-lg bg-stone-100 group-hover:bg-white flex items-center justify-center"><Bell className="w-3.5 h-3.5 text-amber-600" /></div>
+                <span className="text-sm font-medium text-stone-700 flex-1">Bildirimleri Gör</span>
                 <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-stone-500" />
               </Link>
               <Link href="/dashboard/reports" className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group hover:bg-emerald-50">

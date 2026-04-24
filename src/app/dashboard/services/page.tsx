@@ -3,7 +3,7 @@ import ServicesClient from "./ServicesClient";
 import { redirect } from "next/navigation";
 
 export default async function ServicesPage() {
-  const supabase = createServerClient() as any;
+  const supabase = createServerClient();
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
@@ -12,7 +12,7 @@ export default async function ServicesPage() {
     .from("salons")
     .select("id")
     .eq("owner_id", user.id)
-    .single();
+    .single<{ id: string }>();
 
   if (!salon) return <div>Salon bulunamadı</div>;
 
