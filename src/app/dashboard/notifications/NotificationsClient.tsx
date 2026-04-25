@@ -31,7 +31,7 @@ export default function NotificationsClient({ notifications: initialNotification
 
   const handleMarkAsRead = async (id: string) => {
     setMarkingId(id);
-    const { error } = await supabase.from("notifications").update({ is_read: true }).eq("id", id);
+    const { error } = await (supabase.from("notifications") as any).update({ is_read: true }).eq("id", id);
 
     if (error) {
       toast.error("Durum güncellenemedi.");
@@ -48,7 +48,7 @@ export default function NotificationsClient({ notifications: initialNotification
     // Optimistic UI update
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
 
-    const { error } = await supabase.from("notifications").update({ is_read: true }).in("id", unreadIds);
+    const { error } = await (supabase.from("notifications") as any).update({ is_read: true }).in("id", unreadIds);
     if (error) {
       toast.error("Bir hata oluştu.");
       setNotifications(initialNotifications); // revert

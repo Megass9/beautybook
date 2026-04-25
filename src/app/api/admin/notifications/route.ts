@@ -11,26 +11,30 @@ export async function POST(request: Request) {
     }
 
     const supabase = createAdminClient();
-    const targetSalons = salon_id === "all"
-      ? await supabase.from("salons").select("id")
-      : { data: [{ id: salon_id }] };
-
-    if (targetSalons.error) {
-      return NextResponse.json({ error: targetSalons.error.message || "Hedef salonlar alınamadı." }, { status: 500 });
+    
+    let salonItems: { id: string }[] = [];
+    
+    if (salon_id === "all") {
+      const { data, error: fetchError } = await supabase.from("salons").select("id");
+      if (fetchError) {
+        return NextResponse.json({ error: fetchError.message || "Hedef salonlar alınamadı." }, { status: 500 });
+      }
+      salonItems = data || [];
+    } else {
+      salonItems = [{ id: salon_id }];
     }
 
-    const salonItems = targetSalons.data || [];
     if (salonItems.length === 0) {
       return NextResponse.json({ error: "Gönderilecek salon bulunamadı." }, { status: 400 });
     }
 
-    const payload = salonItems.map((salon: any) => ({
+    const payload = salonItems.map((salon) => ({
       salon_id: salon.id,
       title: title.trim(),
       message: message.trim(),
     }));
 
-    const { data, error } = await supabase.from("notifications").insert(payload).select();
+    const { data, error } = await supabase.from("notifications").insert(payload as any).select();
 
     if (error) {
       console.error("Admin notification insert error:", error.message, { payload });

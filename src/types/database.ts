@@ -111,8 +111,23 @@ export interface Database {
           message: string
           is_read: boolean
         }
-        Insert: Omit<Database['public']['Tables']['notifications']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['notifications']['Insert']>
+        Insert: Omit<Database['public']['Tables']['notifications']['Row'], 'id' | 'created_at' | 'is_read'> & { is_read?: boolean }
+        Update: Partial<Database['public']['Tables']['notifications']['Row']>
+      }
+      subscriptions: {
+        Row: {
+          id: string
+          salon_id: string
+          plan_name: string
+          amount: number
+          receipt_no: string | null
+          status: 'pending' | 'active' | 'rejected' | 'expired'
+          start_date: string | null
+          end_date: string | null
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['subscriptions']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['subscriptions']['Row']>
       }
       staff_services: {
         Row: {
@@ -121,6 +136,19 @@ export interface Database {
         }
         Insert: Database['public']['Tables']['staff_services']['Row']
         Update: Partial<Database['public']['Tables']['staff_services']['Insert']>
+      }
+      staff_working_hours: {
+        Row: {
+          id: string
+          staff_id: string
+          salon_id: string
+          day_of_week: number
+          start_time: string
+          end_time: string
+          is_day_off: boolean
+        }
+        Insert: Omit<Database['public']['Tables']['staff_working_hours']['Row'], 'id'>
+        Update: Partial<Database['public']['Tables']['staff_working_hours']['Row']>
       }
     }
   }
@@ -140,3 +168,5 @@ export type AppointmentWithDetails = Appointment & {
 }
 
 export type Notification = Database['public']['Tables']['notifications']['Row']
+export type Subscription = Database['public']['Tables']['subscriptions']['Row']
+export type StaffWorkingHour = Database['public']['Tables']['staff_working_hours']['Row']

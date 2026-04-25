@@ -27,7 +27,7 @@ export default async function NotificationsPage() {
   const { data: notifications } = await supabase
     .from("notifications")
     .select("id, title, message, created_at, is_read")
-    .eq("salon_id", salon.id)
+    .eq("salon_id", (salon as any).id)
     .order("created_at", { ascending: false });
 
   return (
