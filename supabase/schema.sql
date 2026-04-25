@@ -22,6 +22,8 @@ CREATE TABLE salons (
   phone         TEXT NOT NULL,
   description   TEXT,
   logo_url      TEXT,
+  theme_color   TEXT DEFAULT '#e11d48',
+  theme_variant TEXT DEFAULT 'elegantDark',
   is_active     BOOLEAN DEFAULT TRUE
 );
 

@@ -22,6 +22,8 @@ export interface Database {
           owner_id: string
           description: string | null
           is_active: boolean
+          theme_color: string | null
+          theme_variant: string | null
         }
         Insert: Omit<Database['public']['Tables']['salons']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['salons']['Insert']>

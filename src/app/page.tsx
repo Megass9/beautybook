@@ -6,7 +6,20 @@ import {
   Bell, Scissors, CheckCircle2
 } from "lucide-react";
 
-export default function LandingPage() {
+import { createAdminClient } from "@/lib/supabase/admin";
+
+export default async function LandingPage() {
+  const supabase = createAdminClient() as any;
+  
+  // Fiyatları DB'den çek
+  const { data: settings } = await supabase
+    .from("system_settings")
+    .select("value")
+    .eq("key", "pricing")
+    .single();
+
+  const pricing = settings?.value || { basic: 250, pro: 500, premium: 900 };
+
   return (
     <div className="min-h-screen bg-stone-50 overflow-x-hidden font-sans">
 
@@ -20,7 +33,7 @@ export default function LandingPage() {
         </div>
         <div className="hidden md:flex items-center gap-2 bg-white/80 border border-stone-200/80 rounded-full p-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] backdrop-blur-md">
           {["Özellikler", "Fiyatlar", "Müşteriler", "Hakkında"].map(item => (
-            <a key={item} href={`#${item.toLowerCase()}`} className="text-sm font-bold text-stone-500 hover:text-stone-900 hover:bg-stone-100/80 transition-all px-5 py-2 rounded-full">
+            <a key={item} href={item === "Fiyatlar" ? "#fiyatlar" : `#${item.toLowerCase()}`} className="text-sm font-bold text-stone-500 hover:text-stone-900 hover:bg-stone-100/80 transition-all px-5 py-2 rounded-full">
               {item}
             </a>
           ))}
@@ -36,8 +49,10 @@ export default function LandingPage() {
         </div>
       </nav>
 
+      {/* ... (Hero ve diğer kısımlar aynı) ... */}
       {/* ── HERO ── */}
       <section className="pt-36 pb-0 px-6 relative overflow-hidden">
+        {/* ... (İçerik aynı kalsın diye atlıyorum, replace işlemi tüm dosyayı kapsamayacak şekilde yapılacak) ... */}
         {/* Abstract Glows */}
         <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-rose-200/40 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="absolute top-40 left-0 w-[600px] h-[600px] bg-amber-100/40 rounded-full blur-[100px] -translate-x-1/2 pointer-events-none" />
@@ -294,6 +309,94 @@ export default function LandingPage() {
                 <p className="text-stone-500 font-medium px-4">{s.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PRICING ── */}
+      <section id="fiyatlar" className="py-32 px-6 relative overflow-hidden bg-stone-50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-20">
+            <span className="inline-block text-xs font-black text-rose-600 uppercase tracking-[0.3em] bg-rose-50 border border-rose-100 px-6 py-2 rounded-full mb-6">
+              Şeffaf Fiyatlandırma
+            </span>
+            <h2 className="text-4xl md:text-6xl font-black text-stone-900 tracking-tighter mb-6 leading-tight">
+              Salonunuz İçin En İyi Yatırım
+            </h2>
+            <p className="text-stone-500 max-w-2xl mx-auto text-lg font-medium leading-relaxed">
+              Gizli ücret yok. Kurulum ücreti yok. Sadece işinizi büyütmeye odaklanan net paketler.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 items-end">
+            {/* Basic */}
+            <div className="bg-white rounded-[3rem] border border-stone-200 p-10 shadow-sm hover:shadow-xl transition-all group flex flex-col h-full">
+              <div className="mb-8">
+                <h3 className="text-xl font-black text-stone-900 mb-2">Başlangıç</h3>
+                <p className="text-sm font-medium text-stone-500">Bireysel uzmanlar için ideal.</p>
+              </div>
+              <div className="mb-10 flex items-baseline gap-1">
+                <span className="text-4xl font-black text-stone-900">₺{pricing.basic}</span>
+                <span className="text-stone-400 font-bold">/ay</span>
+              </div>
+              <ul className="space-y-5 mb-10 flex-1">
+                {["1 Uzman Tanımı", "Online Randevu Sayfası", "Müşteri Kayıt Sistemi", "Temel İstatistikler"].map(f => (
+                  <li key={f} className="flex items-center gap-3 text-sm font-bold text-stone-600">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" /> {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/auth/register" className="w-full py-4 bg-stone-100 hover:bg-stone-200 text-stone-900 rounded-2xl font-black text-center transition-all">
+                Hemen Başla
+              </Link>
+            </div>
+
+            {/* Pro */}
+            <div className="bg-[#0c0a09] rounded-[3.5rem] border border-stone-800 p-12 shadow-2xl relative flex flex-col h-[105%] group">
+              <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-rose-500 text-white text-[10px] font-black px-6 py-2 rounded-full uppercase tracking-widest shadow-lg shadow-rose-900/40">
+                EN POPÜLER
+              </div>
+              <div className="mb-8">
+                <h3 className="text-2xl font-black text-white mb-2">Profesyonel</h3>
+                <p className="text-sm font-medium text-stone-400">Büyümekte olan salonlar için.</p>
+              </div>
+              <div className="mb-10 flex items-baseline gap-1">
+                <span className="text-5xl font-black text-white">₺{pricing.pro}</span>
+                <span className="text-stone-500 font-bold">/ay</span>
+              </div>
+              <ul className="space-y-5 mb-12 flex-1">
+                {["5 Uzman Tanımı", "Gelişmiş Finans Yönetimi", "Otomatik SMS Hatırlatma", "Envanter Takibi", "Personel Prim Sistemi"].map(f => (
+                  <li key={f} className="flex items-center gap-3 text-sm font-bold text-stone-300">
+                    <CheckCircle2 className="w-5 h-5 text-rose-500" /> {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/auth/register" className="w-full py-5 bg-rose-500 hover:bg-rose-600 text-white rounded-[2rem] font-black text-center transition-all shadow-xl shadow-rose-900/20">
+                14 Gün Ücretsiz Dene
+              </Link>
+            </div>
+
+            {/* Premium */}
+            <div className="bg-white rounded-[3rem] border border-stone-200 p-10 shadow-sm hover:shadow-xl transition-all group flex flex-col h-full">
+              <div className="mb-8">
+                <h3 className="text-xl font-black text-stone-900 mb-2">Premium</h3>
+                <p className="text-sm font-medium text-stone-500">Sınırsız güç isteyenler için.</p>
+              </div>
+              <div className="mb-10 flex items-baseline gap-1">
+                <span className="text-4xl font-black text-stone-900">₺{pricing.premium}</span>
+                <span className="text-stone-400 font-bold">/ay</span>
+              </div>
+              <ul className="space-y-5 mb-10 flex-1">
+                {["Sınırsız Uzman", "Öncelikli 7/24 Destek", "Markaya Özel Domain", "WhatsApp Entegrasyonu", "Gelişmiş API Erişimi"].map(f => (
+                  <li key={f} className="flex items-center gap-3 text-sm font-bold text-stone-600">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" /> {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/auth/register" className="w-full py-4 bg-stone-100 hover:bg-stone-200 text-stone-900 rounded-2xl font-black text-center transition-all">
+                Bize Ulaşın
+              </Link>
+            </div>
           </div>
         </div>
       </section>

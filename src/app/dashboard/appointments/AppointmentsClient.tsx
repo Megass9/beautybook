@@ -259,6 +259,11 @@ export default function AppointmentsClient({ salonId, initialAppointments, servi
                           <span className="text-rose-600 font-bold ml-1 border-l border-stone-200 pl-3">₺{apt.service.price}</span>
                         )}
                       </div>
+                      {apt.notes && (
+                        <div className="mt-3 text-xs font-semibold text-stone-600 bg-stone-50 border border-stone-200/60 rounded-xl p-3 whitespace-pre-line leading-relaxed">
+                          {apt.notes}
+                        </div>
+                      )}
                     </div>
 
                     {/* Actions */}
@@ -341,9 +346,14 @@ export default function AppointmentsClient({ salonId, initialAppointments, servi
                       </div>
                     </td>
                     <td className="py-5">
-                      <div className="flex flex-col gap-1.5 whitespace-nowrap">
-                        <p className="text-xs font-bold text-stone-700 flex items-center gap-1.5"><Scissors className="w-3.5 h-3.5 text-rose-500"/> {apt.service?.name}</p>
-                        <p className="text-[11px] font-semibold text-stone-500 flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-blue-500"/> {apt.staff?.name}</p>
+                      <div className="flex flex-col gap-1.5">
+                        <p className="text-xs font-bold text-stone-700 flex items-center gap-1.5 whitespace-nowrap"><Scissors className="w-3.5 h-3.5 text-rose-500"/> {apt.service?.name}</p>
+                        <p className="text-[11px] font-semibold text-stone-500 flex items-center gap-1.5 whitespace-nowrap"><User className="w-3.5 h-3.5 text-blue-500"/> {apt.staff?.name}</p>
+                        {apt.notes && (
+                          <div className="mt-1 max-w-[250px] overflow-hidden">
+                            <p className="text-[10px] font-medium text-stone-400 truncate" title={apt.notes}>{apt.notes.replace(/\n/g, " | ")}</p>
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="py-5">

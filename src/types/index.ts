@@ -10,6 +10,13 @@ export interface Salon {
   phone: string;
   logo_url?: string;
   description?: string;
+  theme_color?: string;
+  theme_variant?: string;
+  is_deposit_required?: boolean;
+  deposit_percentage?: number;
+  iban?: string;
+  account_holder?: string;
+  bank_name?: string;
   created_at: string;
   updated_at: string;
 }
@@ -92,6 +99,18 @@ export interface Appointment {
   service?: Service;
 }
 
+export interface Subscription {
+  id: string;
+  salon_id: string;
+  plan_name: string;
+  amount: number;
+  receipt_no?: string;
+  status: "pending" | "active" | "rejected" | "expired";
+  start_date?: string;
+  end_date?: string;
+  created_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -102,6 +121,7 @@ export interface Database {
       customers: { Row: Customer; Insert: Omit<Customer, "id" | "created_at">; Update: Partial<Customer> };
       appointments: { Row: Appointment; Insert: Omit<Appointment, "id" | "created_at" | "customer" | "staff" | "service">; Update: Partial<Appointment> };
       staff_services: { Row: StaffService; Insert: StaffService; Update: Partial<StaffService> };
+      subscriptions: { Row: Subscription; Insert: Omit<Subscription, "id" | "created_at">; Update: Partial<Subscription> };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
+import { unstable_noStore as noStore } from "next/cache";
 import BookingClient from "./BookingClient";
 import { 
   MapPin, 
@@ -19,6 +20,35 @@ import {
 
 const DAYS_TR = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
 
+const DESIGN_COLORS = {
+  elegantDark: "#e11d48",
+  luxuryGlow: "#7c3aed",
+  freshLight: "#0ea5e9",
+  minimalCalm: "#16a34a",
+} as const;
+
+function hexToRgb(hex: string) {
+  const cleaned = hex.replace("#", "");
+  if (cleaned.length !== 6) return { r: 225, g: 29, b: 72 };
+  const r = parseInt(cleaned.slice(0, 2), 16);
+  const g = parseInt(cleaned.slice(2, 4), 16);
+  const b = parseInt(cleaned.slice(4, 6), 16);
+  return { r, g, b };
+}
+
+function rgba(hex: string, alpha: number) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function getDesignVariantByColor(color: string) {
+  const normalized = (color || "").toLowerCase();
+  if (normalized === DESIGN_COLORS.luxuryGlow) return "luxuryGlow";
+  if (normalized === DESIGN_COLORS.freshLight) return "freshLight";
+  if (normalized === DESIGN_COLORS.minimalCalm) return "minimalCalm";
+  return "elegantDark";
+}
+
 function createPublicClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,6 +67,7 @@ function groupByCategory(services: any[]) {
 }
 
 export default async function SalonPage({ params }: { params: { slug: string } }) {
+  noStore();
   const supabase = createPublicClient();
 
   const { data: salon, error } = await supabase
@@ -47,36 +78,106 @@ export default async function SalonPage({ params }: { params: { slug: string } }
 
   if (error || !salon) notFound();
 
-  const [{ data: services }, { data: staff }, { data: hours }, { data: reviews }] = await Promise.all([
+  const todayStr = new Date().toISOString().split("T")[0];
+  const [{ data: services }, { data: staff }, { data: hours }, { data: reviews }, { data: exceptions }, { data: subscriptions }] = await Promise.all([
     supabase.from("services").select("*").eq("salon_id", salon.id).eq("is_active", true).order("category"),
     supabase.from("staff").select("*").eq("salon_id", salon.id).eq("is_active", true),
     supabase.from("working_hours").select("*").eq("salon_id", salon.id).order("day_of_week"),
     supabase.from("reviews").select("*").eq("salon_id", salon.id).eq("is_verified", true).order("created_at", { ascending: false }).limit(6),
+    supabase.from("exception_dates").select("*").eq("salon_id", salon.id).gte("exception_date", todayStr),
+    supabase.from("subscriptions").select("*").eq("salon_id", salon.id).order("created_at", { ascending: false }),
   ]);
 
   const openHours = hours?.filter(h => !h.is_closed) || [];
   const grouped = groupByCategory(services || []);
   const categories = Object.keys(grouped);
 
+  // Dinamik Tema Ayarları
+  const primaryColor = salon.theme_color || "#e11d48";
+  const designVariant = salon.theme_variant || getDesignVariantByColor(primaryColor);
+  
+  // Tasarım Modları
+  const isMinimal = designVariant === "minimalCalm";
+  const isLuxury = designVariant === "luxuryGlow";
+  const isFresh = designVariant === "freshLight";
+  const isElegant = designVariant === "elegantDark";
+  
+  const isLightHero = isFresh || isMinimal || isLuxury;
+
+  // ══ TASARIM SİSTEMİ DEĞİŞKENLERİ ══
+  const sectionSpacingClass = isMinimal ? "space-y-24" : isLuxury ? "space-y-36" : "space-y-24";
+  
+  // Kart Stilleri
+  const cardBaseClass = isMinimal
+    ? "rounded-none border border-stone-200 shadow-none bg-white hover:bg-stone-50 transition-all p-8 relative after:absolute after:inset-0 after:border after:border-stone-900 after:opacity-0 hover:after:opacity-100 after:transition-opacity after:-translate-x-1 after:-translate-y-1 after:pointer-events-none"
+    : isLuxury
+    ? "rounded-[3.5rem] border border-white/30 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.05)] backdrop-blur-3xl bg-white/30 hover:bg-white/50 transition-all p-10 hover:-translate-y-3"
+    : isFresh
+    ? "rounded-[3rem] border-none shadow-[0_30px_60px_rgba(14,165,233,0.1)] bg-white hover:scale-[1.02] transition-all p-8"
+    : "rounded-3xl border border-stone-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)] bg-white p-6 hover:shadow-[0_20px_40px_rgba(0,0,0,0.04)] transition-all";
+
+  // Buton Stilleri
+  const buttonBaseClass = isMinimal
+    ? "rounded-none font-bold border-2 border-stone-900 text-stone-900 hover:bg-stone-900 hover:text-white transition-all uppercase px-12 py-5 tracking-widest bg-transparent"
+    : isLuxury
+    ? "rounded-full font-light tracking-[0.4em] text-white shadow-[0_15px_30px_var(--primary-strong)] hover:scale-110 hover:shadow-[0_25px_50px_var(--primary-strong)] bg-gradient-to-tr from-[var(--primary)] to-white/20 transition-all px-16 py-6 uppercase backdrop-blur-md"
+    : isFresh
+    ? "rounded-full font-black text-white shadow-[0_20px_40px_var(--primary-strong)] hover:shadow-[0_25px_50px_var(--primary-strong)] hover:scale-105 active:scale-95 transition-all px-12 py-5 italic"
+    : "rounded-2xl font-black text-white shadow-[0_15px_30px_var(--primary-strong)] px-10 py-5 hover:-translate-y-1 transition-all brightness-110";
+
+  // Yazı Stilleri (Heading)
+  const titleClass = isMinimal
+    ? "font-medium tracking-tight text-stone-950 text-5xl uppercase"
+    : isLuxury
+    ? "font-serif font-light tracking-[0.2em] uppercase text-stone-900 leading-[1.4]"
+    : isFresh
+    ? "font-black tracking-tighter text-sky-950 text-6xl italic leading-none"
+    : "font-black tracking-tight text-stone-900 text-4xl md:text-5xl";
+
+  const themeStyles = {
+    "--primary": primaryColor,
+    "--primary-light": rgba(primaryColor, 0.12),
+    "--primary-soft": isLuxury ? rgba(primaryColor, 0.05) : rgba(primaryColor, 0.08),
+    "--primary-strong": rgba(primaryColor, 0.26),
+  } as React.CSSProperties;
+
   return (
-    <div className="min-h-screen bg-stone-50 font-sans selection:bg-rose-100 selection:text-rose-900">
+    <div
+      className={`min-h-screen font-sans selection:bg-[var(--primary-light)] selection:text-stone-900 ${
+        isLuxury ? "bg-[radial-gradient(circle_at_top_right,_var(--primary-light)_0%,_#fafaf9_100%)]" : isFresh ? "bg-[#f0f9ff]" : isMinimal ? "bg-white" : "bg-stone-50"
+      }`}
+      style={themeStyles}
+    >
+      <style dangerouslySetInnerHTML={{ __html: `
+        ::-webkit-scrollbar-thumb { background-color: ${primaryColor} !important; }
+      `}} />
 
       {/* ══ HERO ══ */}
-      <div className="relative bg-[#0c0a09] overflow-hidden">
+      <div
+        className={`relative overflow-hidden ${isFresh ? "bg-white rounded-b-[6rem]" : isMinimal ? "bg-stone-50 border-b border-stone-200" : isLuxury ? "bg-transparent" : "bg-[#0c0a09]"}`}
+      >
         {/* Background effects */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-rose-900/20 rounded-full blur-[120px] animate-pulse" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-rose-950/30 rounded-full blur-[100px] animate-pulse delay-700" />
-          <div className="absolute inset-0 opacity-[0.025]"
+          <div 
+            className={`absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] ${isMinimal ? "opacity-10" : "animate-pulse"}`} 
+            style={{ backgroundColor: isLuxury ? "var(--primary)" : "var(--primary-strong)", opacity: isLightHero ? 0.1 : 0.4 }} 
+          />
+          {isLuxury && (
+            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/carbon-fibre.png')" }} />
+          )}
+          {isMinimal && (
+            <div className="absolute inset-0 opacity-[0.03]" style={{backgroundImage: "radial-gradient(#000 1px, transparent 1px)", backgroundSize: "20px 20px"}} />
+          )}
+          <div className={`absolute inset-0 ${isLightHero ? "opacity-[0.04]" : "opacity-[0.025]"}`}
             style={{backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)", backgroundSize: "32px 32px"}} />
         </div>
 
-        <div className="relative max-w-5xl mx-auto px-6 py-24 md:py-32">
+        <div className={`relative max-w-5xl mx-auto px-6 ${isMinimal ? "py-16 md:py-20" : "py-24 md:py-32"}`}>
           <div className="flex flex-col md:flex-row items-center md:items-end gap-10 text-center md:text-left">
             {/* Avatar / Logo */}
             <div className="shrink-0 animate-fade-in-up">
               {salon.logo_url ? (
-                <div className="w-28 h-28 md:w-36 md:h-36 rounded-[2.5rem] bg-white p-2 border border-stone-800 shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center justify-center overflow-hidden backdrop-blur-sm">
+                <div className={`w-28 h-28 md:w-48 md:h-48 bg-white p-2 border flex items-center justify-center overflow-hidden transition-all duration-700 ${isMinimal ? "rounded-none border-stone-900 border-4" : isLuxury ? "rounded-full border-white/40 shadow-[0_0_50px_rgba(255,255,255,0.5)]" : isFresh ? "rounded-[5rem] -rotate-3 shadow-2xl" : "rounded-[2.5rem] border-stone-800 shadow-2xl"}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={salon.logo_url}
@@ -85,7 +186,10 @@ export default async function SalonPage({ params }: { params: { slug: string } }
                   />
                 </div>
               ) : (
-                <div className="w-28 h-28 md:w-36 md:h-36 bg-gradient-to-br from-rose-600 to-rose-800 rounded-[2.5rem] flex items-center justify-center text-white text-5xl font-black shadow-[0_20px_50px_rgba(225,29,72,0.2)] border border-rose-700/30 animate-bounce-subtle">
+                <div
+                  className={`w-28 h-28 md:w-48 md:h-48 flex items-center justify-center text-white text-6xl font-black animate-bounce-subtle border border-white/10 ${isMinimal ? "rounded-none" : isLuxury ? "rounded-full" : isFresh ? "rounded-[5rem]" : "rounded-[2.5rem]"}`}
+                  style={{ backgroundColor: "var(--primary)" }}
+                >
                   {salon.name[0]}
                 </div>
               )}
@@ -94,37 +198,40 @@ export default async function SalonPage({ params }: { params: { slug: string } }
             {/* Info */}
             <div className="flex-1 animate-fade-in-up delay-200">
               {/* Verified badge */}
-              <div className="inline-flex items-center gap-1.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-black px-4 py-1.5 rounded-full mb-5 uppercase tracking-[0.2em] shadow-sm">
+              <div
+                className="inline-flex items-center gap-1.5 border text-[10px] font-black px-4 py-1.5 rounded-full mb-5 uppercase tracking-[0.2em] shadow-sm"
+                style={{ backgroundColor: "var(--primary-light)", borderColor: "var(--primary)", color: "var(--primary)" }}
+              >
                 <ShieldCheck className="w-3.5 h-3.5" />
                 Premium Salon
               </div>
 
-              <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-[1.1] mb-6 animate-fade-in-up delay-300">
+              <h1 className={`text-4xl md:text-6xl leading-[1.1] mb-6 animate-fade-in-up delay-300 ${titleClass} ${isLightHero ? "text-stone-900" : "text-white"}`}>
                 {salon.name}
               </h1>
 
               {salon.description && (
-                <p className="text-base md:text-lg text-stone-400 mb-8 leading-relaxed max-w-2xl animate-fade-in-up delay-400 font-medium">
+                <p className={`text-base md:text-lg mb-8 leading-relaxed max-w-2xl animate-fade-in-up delay-400 ${isMinimal ? "font-normal italic" : "font-medium"} ${isLightHero ? "text-stone-600" : "text-stone-400"}`}>
                   {salon.description.length > 150 ? salon.description.slice(0, 150) + "..." : salon.description}
                 </p>
               )}
 
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-6 gap-y-3 animate-fade-in-up delay-500">
                 {salon.address && (
-                  <span className="flex items-center gap-2 text-sm text-stone-300 font-semibold">
-                    <MapPin className="w-4 h-4 text-rose-500 shrink-0" />
+                  <span className={`flex items-center gap-2 text-sm font-semibold ${isLightHero ? "text-stone-600" : "text-stone-300"}`}>
+                    <MapPin className="w-4 h-4 shrink-0" style={{ color: "var(--primary)" }} />
                     {salon.address}{salon.city ? `, ${salon.city}` : ""}
                   </span>
                 )}
                 {salon.phone && (
-                  <a href={`tel:${salon.phone}`} className="flex items-center gap-2 text-sm text-stone-300 hover:text-rose-500 transition-colors font-semibold">
-                    <Phone className="w-4 h-4 text-rose-500 shrink-0" />
+                  <a href={`tel:${salon.phone}`} className={`flex items-center gap-2 text-sm transition-colors font-semibold ${isLightHero ? "text-stone-600" : "text-stone-300"}`}>
+                    <Phone className="w-4 h-4 shrink-0" style={{ color: "var(--primary)" }} />
                     {salon.phone}
                   </a>
                 )}
                 {openHours.length > 0 && (
-                  <span className="flex items-center gap-2 text-sm text-stone-300 font-semibold">
-                    <Clock className="w-4 h-4 text-rose-500 shrink-0" />
+                  <span className={`flex items-center gap-2 text-sm font-semibold ${isLightHero ? "text-stone-600" : "text-stone-300"}`}>
+                    <Clock className="w-4 h-4 shrink-0" style={{ color: "var(--primary)" }} />
                     {String(openHours[0].open_time).slice(0, 5)} – {String(openHours[0].close_time).slice(0, 5)}
                   </span>
                 )}
@@ -134,38 +241,37 @@ export default async function SalonPage({ params }: { params: { slug: string } }
             {/* CTA button (desktop) */}
             <div className="hidden md:block shrink-0">
               <a href="#randevu" 
-                className="inline-flex items-center gap-3 bg-rose-600 hover:bg-rose-700 text-white font-black px-8 py-5 rounded-[1.5rem] transition-all shadow-[0_15px_40px_rgba(225,29,72,0.3)] hover:-translate-y-1 text-sm uppercase tracking-widest">
-                Randevu Al
-                <ChevronRight className="w-4 h-4" />
+                style={!isMinimal ? { backgroundColor: "var(--primary)" } : {}}
+                className={`inline-flex items-center gap-3 transition-all text-sm tracking-widest ${buttonBaseClass}`}>
+                <span>Randevu Al</span>
+                <ChevronRight className={`w-4 h-4 ${isFresh ? "animate-ping-slow" : ""}`} />
               </a>
             </div>
           </div>
         </div>
 
         {/* Bottom wave */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-stone-50"
-          style={{clipPath: "polygon(0 100%, 100% 100%, 100% 0, 50% 100%, 0 0)"}} />
       </div>
 
       {/* ══ WORKING HOURS STRIP ══ */}
       {openHours.length > 0 && (
-        <div className="bg-white border-b border-stone-200 py-6 px-6 overflow-x-auto hide-scroll sticky top-0 z-30 shadow-sm">
+        <div className={`bg-white border-b border-stone-200 py-6 px-6 overflow-x-auto hide-scroll sticky top-0 z-30 ${isMinimal ? "border-t border-stone-900" : "shadow-sm"}`}>
           <div className="max-w-5xl mx-auto flex items-center gap-3 min-w-max">
-            <span className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] mr-4 border-r border-stone-200 pr-6">Çalışma Saatleri</span>
+            <span className={`text-[10px] font-black uppercase tracking-[0.2em] mr-4 border-r pr-6 ${isMinimal ? "text-stone-900 border-stone-900" : "text-stone-400 border-stone-200"}`}>Çalışma Saatleri</span>
             {DAYS_TR.map((day, i) => {
               const h = hours?.find(h => h.day_of_week === i);
               const isToday = new Date().getDay() === i;
               return (
-                <div key={day} className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-[11px] font-bold transition-all ${
+                <div key={day} className={`flex items-center gap-3 px-5 py-2.5 text-[11px] font-bold transition-all ${
                   h?.is_closed
                     ? "bg-stone-100 text-stone-400"
                     : isToday
-                    ? "bg-rose-600 text-white shadow-md shadow-rose-100 scale-105"
-                    : "bg-stone-50 text-stone-600 border border-stone-100"
-                }`}>
+                    ? "text-white scale-105 shadow-lg"
+                    : "text-stone-600 bg-stone-50"
+                } ${isMinimal ? "rounded-none border border-stone-200" : isLuxury ? "rounded-full backdrop-blur-md" : isFresh ? "rounded-full" : "rounded-2xl"}`} style={isToday && !h?.is_closed ? { backgroundColor: "var(--primary)", borderColor: "var(--primary)" } : {}}>
                   <span className="uppercase tracking-wider">{day.slice(0, 3)}</span>
                   {!h?.is_closed && h && (
-                    <span className={isToday ? "text-rose-100" : "text-stone-400 font-medium"}>
+                    <span className={isToday ? "text-white/80" : "text-stone-400 font-medium"}>
                       {String(h.open_time).slice(0, 5)}–{String(h.close_time).slice(0, 5)}
                     </span>
                   )}
@@ -177,7 +283,7 @@ export default async function SalonPage({ params }: { params: { slug: string } }
         </div>
       )}
 
-      <div className="max-w-5xl mx-auto px-6 py-16 md:py-24 space-y-24">
+      <div className={`max-w-5xl mx-auto px-6 py-16 md:py-24 ${sectionSpacingClass}`}>
 
         {/* ══ ABOUT ══ */}
         {/* ══ SERVICES ══ */}
@@ -185,35 +291,35 @@ export default async function SalonPage({ params }: { params: { slug: string } }
           <section>
             <div className="flex items-end justify-between mb-12">
               <div>
-                <p className="text-[11px] font-black text-rose-500 uppercase tracking-[0.3em] mb-3">Kataloğumuz</p>
-                <h2 className="text-3xl md:text-4xl font-black text-stone-900 tracking-tight">Özel Hizmetlerimiz</h2>
+                {!isMinimal && <p className="text-[11px] font-black uppercase tracking-[0.3em] mb-3" style={{ color: "var(--primary)" }}>Kataloğumuz</p>}
+                <h2 className={`text-3xl md:text-4xl ${titleClass}`}>Özel Hizmetlerimiz</h2>
               </div>
-              <div className="hidden sm:flex items-center gap-2 text-stone-400 text-sm font-bold bg-white border border-stone-200 px-5 py-2.5 rounded-2xl shadow-sm">
+              {!isMinimal && <div className="hidden sm:flex items-center gap-2 text-stone-400 text-sm font-bold bg-white border border-stone-200 px-5 py-2.5 rounded-2xl shadow-sm">
                 <Scissors className="w-4 h-4" /> {services?.length} Hizmet
-              </div>
+              </div>}
             </div>
 
             <div className="space-y-8">
               {categories.map(cat => (
                 <div key={cat}>
                   <div className="flex items-center gap-4 mb-6">
-                    <span className="text-xs font-black text-stone-900 uppercase tracking-[0.2em] bg-stone-100 px-5 py-2 rounded-xl">
+                    <span className={`text-xs font-black uppercase tracking-[0.2em] px-5 py-2 ${isMinimal ? "border-l-4 border-stone-900 text-stone-900" : "bg-stone-100 rounded-xl text-stone-900"}`}>
                       {cat}
                     </span>
                     <div className="flex-1 h-[1px] bg-stone-200" />
                   </div>
-                  <div className="grid sm:grid-cols-2 gap-4">
+                  <div className={`grid gap-6 ${isMinimal ? "grid-cols-1" : "sm:grid-cols-2"}`}>
                     {grouped[cat].map((s: any) => (
                       <div key={s.id}
-                        className="group bg-white rounded-3xl border border-stone-200 p-6 hover:border-rose-300 hover:shadow-[0_15px_40px_rgba(0,0,0,0.04)] hover:-translate-y-1 transition-all cursor-pointer">
+                        className={`group transition-all cursor-pointer ${cardBaseClass}`}>
                         <div className="flex items-start gap-5">
-                          <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-rose-600 transition-colors duration-500">
-                            <Scissors className="w-6 h-6 text-rose-500 group-hover:text-white transition-colors duration-500" />
-                          </div>
+                          {!isMinimal && <div className={`w-14 h-14 flex items-center justify-center shrink-0 transition-colors duration-500 ${isLuxury ? "rounded-full" : "rounded-2xl"}`} style={{ backgroundColor: "var(--primary-soft)" }}>
+                            <Scissors className="w-6 h-6 transition-colors duration-500" style={{ color: "var(--primary)" }} />
+                          </div>}
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-start mb-1">
-                              <p className="font-black text-stone-900 text-lg group-hover:text-rose-600 transition-colors duration-300">{s.name}</p>
-                              <p className="text-xl font-black text-stone-900 group-hover:text-rose-600 transition-colors duration-300 tabular-nums">₺{s.price}</p>
+                              <p className={`transition-colors duration-300 ${isLuxury ? "font-serif text-2xl font-light italic" : "font-black text-lg text-stone-900"}`}>{s.name}</p>
+                              <p className={`font-black transition-colors duration-300 tabular-nums ${isLuxury ? "text-stone-400 text-xl" : "text-stone-900 text-xl"}`}>₺{s.price}</p>
                             </div>
                             {s.description && (
                               <p className="text-sm text-stone-500 mb-4 line-clamp-2 leading-relaxed">{s.description}</p>
@@ -222,8 +328,8 @@ export default async function SalonPage({ params }: { params: { slug: string } }
                                <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest flex items-center gap-1.5 bg-stone-50 px-3 py-1.5 rounded-lg border border-stone-100">
                                  <Clock className="w-3.5 h-3.5" />{s.duration_minutes} DK
                                </span>
-                               <span className="w-8 h-8 rounded-full bg-stone-50 flex items-center justify-center text-stone-300 group-hover:bg-rose-50 group-hover:text-rose-500 transition-all">
-                                 <Plus className="w-4 h-4" />
+                               <span className="w-8 h-8 rounded-full bg-stone-50 flex items-center justify-center text-stone-300 transition-all" style={{ color: "var(--primary)" }}>
+                                  <Plus className="w-4 h-4" />
                                </span>
                             </div>
                           </div>
@@ -241,8 +347,8 @@ export default async function SalonPage({ params }: { params: { slug: string } }
         <section>
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
             <div>
-              <p className="text-[11px] font-black text-rose-500 uppercase tracking-[0.3em] mb-3">Deneyimler</p>
-              <h2 className="text-3xl md:text-4xl font-black text-stone-900 tracking-tight">Mutlu Müşterilerimiz</h2>
+              <p className="text-[11px] font-black uppercase tracking-[0.3em] mb-3" style={{ color: "var(--primary)" }}>Deneyimler</p>
+              <h2 className={`text-3xl md:text-4xl ${titleClass}`}>Mutlu Müşterilerimiz</h2>
             </div>
             <div className="flex items-center gap-4 bg-white border border-stone-200 px-6 py-4 rounded-3xl shadow-sm">
                <div className="flex items-center gap-1">
@@ -254,11 +360,11 @@ export default async function SalonPage({ params }: { params: { slug: string } }
             </div>
           </div>
           {reviews && reviews.length > 0 ? (
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className={`grid gap-6 ${isLuxury ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
               {reviews.map((review: any) => (
-                <div key={review.id} className="bg-white rounded-[2rem] border border-stone-200 p-8 shadow-sm relative overflow-hidden group hover:border-rose-200 transition-colors">
+                <div key={review.id} className={`p-8 relative overflow-hidden group transition-colors ${cardBaseClass}`}>
                   <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <Award className="w-12 h-12 text-rose-900" />
+                    <Award className="w-12 h-12" style={{ color: "var(--primary)" }} />
                   </div>
                   <div className="flex gap-1 mb-6">
                     {[...Array(5)].map((_, i) => (
@@ -269,7 +375,7 @@ export default async function SalonPage({ params }: { params: { slug: string } }
                     <p className="text-stone-600 text-sm leading-relaxed italic mb-8 font-medium">"{review.comment}"</p>
                   )}
                   <div className="flex items-center gap-4 mt-auto">
-                    <div className="w-12 h-12 bg-gradient-to-br from-stone-100 to-stone-200 rounded-2xl flex items-center justify-center text-stone-600 text-sm font-black border border-white shadow-inner">
+                    <div className={`w-12 h-12 bg-gradient-to-br from-stone-100 to-stone-200 flex items-center justify-center text-stone-600 text-sm font-black border border-white shadow-inner ${isMinimal ? "rounded-none" : "rounded-2xl"}`}>
                       {review.customer_name[0].toUpperCase()}
                     </div>
                     <div>
@@ -299,13 +405,13 @@ export default async function SalonPage({ params }: { params: { slug: string } }
           <section>
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-2xl font-black text-stone-900 tracking-tight">Ekibimiz</h2>
+                <h2 className={`text-2xl ${titleClass}`}>Ekibimiz</h2>
                 <p className="text-sm text-stone-400 mt-1">{staff.length} uzman</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <div className={`grid gap-4 ${isFresh ? "grid-cols-2 md:grid-cols-3" : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4"}`}>
               {staff.map((s: any, index: number) => (
-                <div key={s.id} className={`bg-white rounded-2xl border border-stone-200 p-5 text-center hover:border-rose-200 hover:shadow-md transition-all group animate-fade-in-up`} style={{animationDelay: `${index * 100}ms`}}>
+                <div key={s.id} className={`p-5 text-center hover:shadow-md transition-all group animate-fade-in-up ${cardBaseClass}`} style={{animationDelay: `${index * 100}ms`}}>
                   <div className="relative mb-3">
                     {s.avatar_url ? (
                       <div className="w-14 h-14 rounded-full overflow-hidden mx-auto shadow-lg shadow-rose-200 group-hover:scale-105 transition-transform duration-300">
@@ -313,7 +419,7 @@ export default async function SalonPage({ params }: { params: { slug: string } }
                         <img src={s.avatar_url} alt={s.name} className="w-full h-full object-cover" />
                       </div>
                     ) : (
-                      <div className="w-14 h-14 bg-gradient-to-br from-rose-400 to-rose-700 rounded-full flex items-center justify-center text-white text-xl font-black mx-auto shadow-lg shadow-rose-200 group-hover:scale-105 transition-transform duration-300">
+                      <div className="w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-black mx-auto shadow-lg group-hover:scale-105 transition-transform duration-300" style={{ backgroundColor: "var(--primary)" }}>
                         {s.name[0]}
                       </div>
                     )}
@@ -321,7 +427,7 @@ export default async function SalonPage({ params }: { params: { slug: string } }
                       <div className="w-2 h-2 bg-white rounded-full" />
                     </div>
                   </div>
-                  <p className="font-semibold text-stone-900 text-sm group-hover:text-rose-700 transition-colors duration-300">{s.name}</p>
+                  <p className="font-semibold text-stone-900 text-sm transition-colors duration-300 group-hover:opacity-80">{s.name}</p>
                   {s.title && <p className="text-xs text-stone-400 mt-0.5 group-hover:text-stone-600 transition-colors duration-300">{s.title}</p>}
                   {s.email && <p className="text-xs text-stone-500 mt-1 group-hover:text-stone-700 transition-colors duration-300">{s.email}</p>}
                 </div>
@@ -333,19 +439,26 @@ export default async function SalonPage({ params }: { params: { slug: string } }
         {/* ══ BOOKING ══ */}
         <section id="randevu" className="scroll-mt-24">
           <div className="text-center mb-16">
-            <p className="text-[11px] font-black text-rose-500 uppercase tracking-[0.4em] mb-4">Rezervasyon</p>
-            <h2 className="text-4xl md:text-5xl font-black text-stone-900 tracking-tighter mb-4">Randevunuzu Ayırın</h2>
+            <p className="text-[11px] font-black uppercase tracking-[0.4em] mb-4" style={{ color: "var(--primary)" }}>Rezervasyon</p>
+            <h2 className={`text-4xl md:text-5xl mb-4 ${titleClass}`}>Randevunuzu Ayırın</h2>
             <p className="text-stone-500 font-medium max-w-xl mx-auto">Sadece birkaç adımda hayalinizdeki bakıma kavuşun. 7/24 anında onaylı rezervasyon imkanı.</p>
           </div>
 
-          <div className="bg-white rounded-[3.5rem] border border-stone-200/80 shadow-[0_30px_100px_rgba(0,0,0,0.05)] overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-rose-50 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 opacity-60" />
+          <div className={`border border-stone-200/80 overflow-hidden relative ${cardBaseClass} ${isLuxury ? "shadow-[0_30px_100px_rgba(0,0,0,0.08)]" : ""}`}>
+            <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 opacity-60" style={{ backgroundColor: "var(--primary-soft)" }} />
             <div className="p-6 md:p-10">
               <BookingClient
                 salonId={salon.id}
+                salon={salon}
                 services={services || []}
                 staffList={staff || []}
                 workingHours={hours || []}
+                exceptionDates={exceptions || []}
+                subscriptions={subscriptions || []}
+                designVariant={designVariant}
+                isLuxury={isLuxury}
+                isMinimal={isMinimal}
+                isFresh={isFresh}
               />
             </div>
           </div>
@@ -358,7 +471,7 @@ export default async function SalonPage({ params }: { params: { slug: string } }
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-rose-600 to-rose-800 rounded-xl flex items-center justify-center text-white text-sm font-black overflow-hidden">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-sm font-black overflow-hidden" style={{ backgroundColor: "var(--primary)" }}>
                 {salon.logo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={salon.logo_url} alt={salon.name} className="w-full h-full object-contain" />
@@ -392,7 +505,7 @@ export default async function SalonPage({ params }: { params: { slug: string } }
           </div>
           <div className="text-center">
             <p className="text-xs text-stone-400">
-              <a href="/" className="font-semibold text-rose-600 hover:text-rose-700 transition-colors">BeautyBook</a> ile güçlendirilmiştir
+              <a href="/" className="font-semibold transition-colors" style={{ color: "var(--primary)" }}>BeautyBook</a> ile güçlendirilmiştir
             </p>
           </div>
         </div>
@@ -401,7 +514,8 @@ export default async function SalonPage({ params }: { params: { slug: string } }
       {/* ══ MOBILE STICKY CTA ══ */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-xl border-t border-stone-200 z-50">
         <a href="#randevu"
-          className="flex items-center justify-center gap-2 w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-4 rounded-2xl text-sm shadow-xl shadow-rose-200 transition-all">
+          style={!isMinimal ? { backgroundColor: "var(--primary)" } : {}}
+          className={`flex items-center justify-center gap-2 w-full py-4 text-sm transition-all hover:brightness-110 ${buttonBaseClass}`}>
           Randevu Al
           <ChevronRight className="w-4 h-4" />
         </a>

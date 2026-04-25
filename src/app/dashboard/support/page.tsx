@@ -1,8 +1,11 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import ReportsClient from "./ReportsClient";
+import SupportClient from "./SupportClient";
+import { CreditCard } from "lucide-react";
 
-export default async function ReportsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function SupportPage() {
   const supabase = createServerClient() as any;
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -36,28 +39,43 @@ export default async function ReportsPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
         <div className="w-20 h-20 bg-rose-50 rounded-[2.5rem] flex items-center justify-center mb-6">
-          <TrendingUp className="w-10 h-10 text-rose-500" />
+          <CreditCard className="w-10 h-10 text-rose-500" />
         </div>
-        <h1 className="text-3xl font-black text-stone-900 mb-4">Finansal Raporlar Sadece Pro'da</h1>
+        <h1 className="text-3xl font-black text-stone-900 mb-4">Bu Özellik Paketinizde Yok</h1>
         <p className="text-stone-500 max-w-md mx-auto mb-8 font-medium">
-          Detaylı kazanç grafikleri, randevu istatistikleri ve finansal analizler için paketinizi yükseltin.
+          Destek talebi oluşturma ve öncelikli yardım alma özellikleri sadece Pro ve Premium paket sahiplerine özeldir.
         </p>
         <a href="/dashboard/billing" className="btn-primary">Paketimi Yükselt</a>
       </div>
     );
   }
 
-  // Randevu verilerini çek (İstatistikler için)
-  const { data: appointments } = await supabase
-    .from("appointments")
-    .select(`
-      *,
-      services(price, name)
-    `)
+  // Önce sadece ticketları çek (ticket_messages olmadan, her zaman çalışır)
+  const { data: tickets } = await supabase
+    .from("support_tickets")
+    .select("*")
     .eq("salon_id", salon.id)
-    .neq("status", "cancelled");
+    .order("created_at", { ascending: false });
 
-  return <ReportsClient initialAppointments={appointments || []} />;
+  // ticket_messages tablosunu ayrıca çek (tablo yoksa boş döner)
+  let messages: any[] = [];
+  try {
+    if (tickets && tickets.length > 0) {
+      const { data: msgs } = await supabase
+        .from("ticket_messages")
+        .select("*")
+        .in("ticket_id", tickets.map((t: any) => t.id))
+        .order("created_at", { ascending: true });
+      messages = msgs || [];
+    }
+  } catch (e) {
+    // ticket_messages tablosu henüz yoksa atla
+  }
+
+  const ticketsWithMessages = (tickets || []).map((t: any) => ({
+    ...t,
+    messages: messages.filter((m: any) => m.ticket_id === t.id)
+  }));
+
+  return <SupportClient salonId={salon.id} initialTickets={ticketsWithMessages} />;
 }
-
-import { TrendingUp } from "lucide-react";

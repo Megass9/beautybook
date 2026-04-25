@@ -1,10 +1,11 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles, LayoutDashboard, Calendar, Scissors, Users, UserCircle, Settings, ExternalLink, LogOut, ChevronRight, TrendingUp, Bell } from "lucide-react";
+import { Sparkles, LayoutDashboard, Calendar, Scissors, Users, UserCircle, Settings, ExternalLink, LogOut, ChevronRight, TrendingUp, Bell, Palette, CreditCard, LifeBuoy } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import type { Salon } from "@/types";
+import toast from "react-hot-toast";
 
 const NAV = [
   { href: "/dashboard", label: "Genel Bakış", icon: LayoutDashboard },
@@ -13,18 +14,25 @@ const NAV = [
   { href: "/dashboard/staff", label: "Personel", icon: Users },
   { href: "/dashboard/customers", label: "Müşteriler", icon: UserCircle },
   { href: "/dashboard/notifications", label: "Bildirimler", icon: Bell },
-  { href: "/dashboard/reports", label: "Finans & Raporlar", icon: TrendingUp },
+  { href: "/dashboard/reports", label: "Finans & Raporlar", icon: TrendingUp, premium: true },
+  { href: "/dashboard/support", label: "Destek Talebi", icon: LifeBuoy, premium: true },
+  { href: "/dashboard/appearance", label: "Site Tasarımı", icon: Palette },
+  { href: "/dashboard/billing", label: "Abonelik", icon: CreditCard },
 ];
 
-export default function DashboardSidebar({ salon }: { salon: Salon }) {
+export default function DashboardSidebar({ salon, isLocked, activeSubscription }: { salon: Salon, isLocked?: boolean, activeSubscription?: any }) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
+
+  const isPremiumPlan = activeSubscription && activeSubscription.amount >= 900;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/");
   };
+
+  const isBillingPage = pathname === "/dashboard/billing";
 
   return (
     <aside className="w-[280px] bg-[#0c0a09] flex flex-col h-full flex-shrink-0 border-r border-stone-800/60 relative overflow-hidden">
@@ -48,18 +56,37 @@ export default function DashboardSidebar({ salon }: { salon: Salon }) {
       {/* ── MAIN NAVIGATION ── */}
       <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto hide-scroll relative z-10">
         <p className="px-3 text-[10px] font-extrabold text-stone-500 uppercase tracking-[0.2em] mb-3 mt-2">Menü</p>
-        {NAV.map(({ href, label, icon: Icon }) => {
+        {NAV.map(({ href, label, icon: Icon, premium }) => {
           const active = pathname === href;
+          const disabled = isLocked && href !== "/dashboard/billing";
+          const isRestricted = premium && !isPremiumPlan;
+          
           return (
-            <Link key={href} href={href}
+            <Link 
+              key={href} 
+              href={(disabled || isRestricted) ? "#" : href}
+              onClick={(e) => {
+                if (disabled) {
+                  e.preventDefault();
+                  toast.error("Abonelik süreniz dolduğu için bu sayfaya erişemezsiniz. Lütfen ödeme yapın.");
+                } else if (isRestricted) {
+                  e.preventDefault();
+                  toast.error("Bu özellik sadece Pro ve Premium paketlerde geçerlidir.");
+                }
+              }}
               className={`group flex items-center justify-between px-3 py-3 rounded-2xl text-sm font-bold transition-all duration-300 ${
                 active
                   ? "bg-stone-800/80 text-white shadow-inner border border-stone-700/50"
-                  : "text-stone-400 hover:text-stone-100 hover:bg-stone-900/50 hover:border hover:border-stone-800/40 border border-transparent"
+                  : (disabled || isRestricted)
+                    ? "opacity-30 grayscale cursor-not-allowed text-stone-600"
+                    : "text-stone-400 hover:text-stone-100 hover:bg-stone-900/50 hover:border hover:border-stone-800/40 border border-transparent"
               }`}>
               <div className="flex items-center gap-3">
                 <Icon className={`w-4 h-4 transition-colors ${active ? "text-rose-500" : "text-stone-500 group-hover:text-stone-300"}`} />
                 {label}
+                {premium && !isPremiumPlan && (
+                  <span className="text-[8px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded-md border border-rose-500/30 ml-1">PRO</span>
+                )}
               </div>
               {active && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(225,29,72,0.8)]" />}
             </Link>
@@ -70,15 +97,26 @@ export default function DashboardSidebar({ salon }: { salon: Salon }) {
       {/* ── BOTTOM ACTIONS ── */}
       <div className="p-4 border-t border-stone-800/60 bg-stone-950/30 space-y-2 relative z-10 backdrop-blur-sm">
         <Link href={`/salon/${salon.slug}`} target="_blank"
-          className="group flex items-center justify-between px-4 py-3.5 bg-gradient-to-br from-rose-600/10 to-transparent hover:from-rose-600/20 border border-rose-500/20 hover:border-rose-500/40 rounded-2xl text-sm font-bold text-rose-500 transition-all">
+          className={`group flex items-center justify-between px-4 py-3.5 bg-gradient-to-br from-rose-600/10 to-transparent border border-rose-500/20 rounded-2xl text-sm font-bold text-rose-500 transition-all ${isLocked ? "opacity-30 grayscale pointer-events-none" : "hover:from-rose-600/20 hover:border-rose-500/40"}`}>
           <div className="flex items-center gap-3">
             <ExternalLink className="w-4 h-4" />
             <span>Mini Site'yi Gör</span>
           </div>
           <ChevronRight className="w-4 h-4 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
         </Link>
-        <Link href="/dashboard/settings"
-          className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-stone-400 hover:text-stone-100 hover:bg-stone-900 transition-all border border-transparent hover:border-stone-800/60">
+        <Link 
+          href={isLocked ? "#" : "/dashboard/settings"}
+          onClick={(e) => {
+            if (isLocked) {
+              e.preventDefault();
+              toast.error("Ödeme yapmanız gerekmektedir.");
+            }
+          }}
+          className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all border border-transparent ${
+            isLocked 
+              ? "opacity-30 grayscale text-stone-600 cursor-not-allowed" 
+              : "text-stone-400 hover:text-stone-100 hover:bg-stone-900 hover:border-stone-800/60"
+          }`}>
           <Settings className="w-4 h-4 text-stone-500" />
           Ayarlar
         </Link>

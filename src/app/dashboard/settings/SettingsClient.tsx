@@ -3,13 +3,13 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 import type { Salon, WorkingHour, Database } from "@/types";
-import { Globe, Copy, Check, Save, Image as ImageIcon, MapPin, Building, Phone, Clock, Upload } from "lucide-react";
+import { Globe, Copy, Check, Save, Image as ImageIcon, MapPin, Building, Phone, Clock, Upload, CalendarOff, Plus, Trash2, CreditCard } from "lucide-react";
 
 const DAYS = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
 
 type SalonUpdate = Database["public"]["Tables"]["salons"]["Update"];
 
-export default function SettingsClient({ salon, hours }: { salon: Salon; hours: WorkingHour[] }) {
+export default function SettingsClient({ salon, hours, staffList = [], exceptionDates = [] }: { salon: Salon; hours: WorkingHour[]; staffList?: any[]; exceptionDates?: any[] }) {
   const supabase = createClient() as any;
   const [form, setForm] = useState<SalonUpdate>({
     name: salon.name,
@@ -18,12 +18,58 @@ export default function SettingsClient({ salon, hours }: { salon: Salon; hours: 
     phone: salon.phone || "",
     description: salon.description || "",
     logo_url: salon.logo_url || "",
+    is_deposit_required: salon.is_deposit_required || false,
+    deposit_percentage: salon.deposit_percentage || 20,
+    iban: salon.iban || "",
+    account_holder: salon.account_holder || "",
+    bank_name: salon.bank_name || "",
   });
   const [wh, setWh] = useState(hours);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoFileName, setLogoFileName] = useState<string | null>(null);
+
+  const [exceptions, setExceptions] = useState(exceptionDates);
+  const [newExDate, setNewExDate] = useState("");
+  const [newExStaffId, setNewExStaffId] = useState("");
+  const [newExReason, setNewExReason] = useState("");
+  const [addingEx, setAddingEx] = useState(false);
+
+  const handleAddException = async () => {
+    if (!newExDate) return toast.error("Lütfen bir tarih seçin.");
+    setAddingEx(true);
+    try {
+      const payload = {
+        salon_id: salon.id,
+        exception_date: newExDate,
+        staff_id: newExStaffId || null,
+        reason: newExReason || null
+      };
+      const { data, error } = await supabase.from("exception_dates").insert(payload).select().single();
+      if (error) throw error;
+      setExceptions([...exceptions, data]);
+      setNewExDate("");
+      setNewExStaffId("");
+      setNewExReason("");
+      toast.success("Özel gün eklendi.");
+    } catch (err: any) {
+      toast.error(err.message || "Hata oluştu");
+    } finally {
+      setAddingEx(false);
+    }
+  };
+
+  const handleDeleteException = async (id: string) => {
+    try {
+      const { error } = await supabase.from("exception_dates").delete().eq("id", id);
+      if (error) throw error;
+      setExceptions(exceptions.filter((e: any) => e.id !== id));
+      toast.success("Özel gün silindi.");
+    } catch (err: any) {
+      toast.error(err.message || "Hata oluştu");
+    }
+  };
 
   const salonUrl = `https://beautybook.app/salon/${salon.slug}`;
 
@@ -234,6 +280,85 @@ export default function SettingsClient({ salon, hours }: { salon: Salon; hours: 
           </div>
         </div>
 
+        {/* ── PAYMENT & DEPOSIT SETTINGS ── */}
+        <div className="bg-white rounded-[2.5rem] border border-stone-200/60 p-6 md:p-8 shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center border border-purple-100">
+              <CreditCard className="w-5 h-5 text-purple-500" />
+            </div>
+            <div>
+              <h2 className="text-xl font-extrabold text-stone-900">Ödeme & Kapora Ayarları</h2>
+              <p className="text-xs font-medium text-stone-500 mt-0.5">Randevu sırasında müşterilerden IBAN/Havale ile kapora talep edebilirsiniz.</p>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="flex items-center justify-between p-4 bg-stone-50 rounded-2xl border border-stone-200">
+              <div>
+                <p className="font-bold text-stone-900">Kapora Zorunlu Mu?</p>
+                <p className="text-xs text-stone-500 mt-0.5">Müşterilerin randevuyu onaylamak için havale yapması gerekir.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={!!form.is_deposit_required}
+                  onChange={e => setForm({ ...form, is_deposit_required: e.target.checked })}
+                />
+                <div className="w-11 h-6 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
+              </label>
+            </div>
+
+            {form.is_deposit_required && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
+                <div>
+                  <label className="block text-xs font-extrabold text-stone-500 uppercase tracking-widest mb-2">Kapora Yüzdesi (%)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    className="w-full bg-stone-50/50 border border-stone-200/80 rounded-2xl px-5 py-3.5 text-sm font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-stone-400 focus:ring-4 focus:ring-stone-100/50 transition-all"
+                    value={form.deposit_percentage || 20}
+                    onChange={e => setForm({ ...form, deposit_percentage: parseInt(e.target.value) || 20 })}
+                    placeholder="Örn: 20"
+                  />
+                  <p className="text-[10px] font-semibold text-stone-400 mt-1 pl-1">Hizmet fiyatının yüzde kaçı kapora alınacak?</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-extrabold text-stone-500 uppercase tracking-widest mb-2">Banka Adı</label>
+                  <input
+                    type="text"
+                    className="w-full bg-stone-50/50 border border-stone-200/80 rounded-2xl px-5 py-3.5 text-sm font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-stone-400 focus:ring-4 focus:ring-stone-100/50 transition-all"
+                    value={form.bank_name || ""}
+                    onChange={e => setForm({ ...form, bank_name: e.target.value })}
+                    placeholder="Örn: Garanti Bankası"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-extrabold text-stone-500 uppercase tracking-widest mb-2">Hesap Sahibi</label>
+                  <input
+                    type="text"
+                    className="w-full bg-stone-50/50 border border-stone-200/80 rounded-2xl px-5 py-3.5 text-sm font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-stone-400 focus:ring-4 focus:ring-stone-100/50 transition-all"
+                    value={form.account_holder || ""}
+                    onChange={e => setForm({ ...form, account_holder: e.target.value })}
+                    placeholder="Örn: Ayşe Yılmaz"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-extrabold text-stone-500 uppercase tracking-widest mb-2">IBAN NUMARASI</label>
+                  <input
+                    type="text"
+                    className="w-full bg-stone-50/50 border border-stone-200/80 rounded-2xl px-5 py-3.5 text-sm font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-stone-400 focus:ring-4 focus:ring-stone-100/50 transition-all"
+                    value={form.iban || ""}
+                    onChange={e => setForm({ ...form, iban: e.target.value })}
+                    placeholder="TRXX XXXX XXXX XXXX XXXX XXXX XX"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* ── CONTACT INFORMATION ── */}
         <div className="bg-white rounded-[2.5rem] border border-stone-200/60 p-6 md:p-8 shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
           <div className="flex items-center gap-3 mb-6">
@@ -340,6 +465,96 @@ export default function SettingsClient({ salon, hours }: { salon: Salon; hours: 
                 </label>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* ── EXCEPTION DATES (ÖZEL KAPALI GÜNLER) ── */}
+        <div className="bg-white rounded-[2.5rem] border border-stone-200/60 p-6 md:p-8 shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center border border-amber-100">
+              <CalendarOff className="w-5 h-5 text-amber-500" />
+            </div>
+            <div>
+              <h2 className="text-xl font-extrabold text-stone-900">Özel Kapalı Günler / İzinler</h2>
+              <p className="text-xs font-medium text-stone-500 mt-0.5">Salonun kapalı olduğu özel günleri veya personellerin izin günlerini belirleyin.</p>
+            </div>
+          </div>
+
+          <div className="bg-stone-50 border border-stone-200/60 rounded-[1.5rem] p-6 mb-8">
+            <h3 className="text-sm font-bold text-stone-900 mb-4">Yeni İzin/Tatil Ekle</h3>
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_2fr_auto] gap-4 items-end">
+              <div>
+                <label className="block text-[10px] font-extrabold text-stone-500 uppercase tracking-widest mb-1.5">Tarih</label>
+                <input
+                  type="date"
+                  value={newExDate}
+                  onChange={e => setNewExDate(e.target.value)}
+                  className="w-full bg-white border border-stone-200 rounded-xl px-4 py-2 text-sm font-bold text-stone-900 focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-100"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-extrabold text-stone-500 uppercase tracking-widest mb-1.5">Kimi Kapsıyor?</label>
+                <select
+                  value={newExStaffId}
+                  onChange={e => setNewExStaffId(e.target.value)}
+                  className="w-full bg-white border border-stone-200 rounded-xl px-4 py-2 text-sm font-bold text-stone-900 focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-100"
+                >
+                  <option value="">Tüm Salon (Herkes)</option>
+                  {staffList?.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-extrabold text-stone-500 uppercase tracking-widest mb-1.5">Sebep / Not</label>
+                <input
+                  type="text"
+                  placeholder="Örn: Yıllık İzin, Resmi Tatil vb."
+                  value={newExReason}
+                  onChange={e => setNewExReason(e.target.value)}
+                  className="w-full bg-white border border-stone-200 rounded-xl px-4 py-2 text-sm font-bold text-stone-900 focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-100 placeholder:text-stone-300"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleAddException}
+                disabled={addingEx}
+                className="h-[38px] bg-stone-900 hover:bg-black text-white px-6 rounded-xl text-xs font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap"
+              >
+                {addingEx ? "Ekleniyor..." : <><Plus className="w-4 h-4" /> Ekle</>}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-xs font-extrabold text-stone-400 uppercase tracking-widest mb-2 px-2">Kayıtlı Özel Günler</h3>
+            {exceptions?.length === 0 ? (
+              <p className="text-sm text-stone-500 bg-stone-50 p-4 rounded-xl text-center border border-stone-100">Henüz bir özel gün veya izin kaydedilmemiş.</p>
+            ) : (
+              exceptions?.map((ex: any) => {
+                const staff = staffList?.find((s: any) => s.id === ex.staff_id);
+                return (
+                  <div key={ex.id} className="flex items-center justify-between p-4 bg-white border border-stone-200/80 rounded-xl hover:border-stone-300 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-lg flex flex-col items-center justify-center border border-rose-100 shrink-0">
+                        <span className="text-[10px] font-bold uppercase">{new Date(ex.exception_date).toLocaleDateString("tr-TR", { month: "short" })}</span>
+                        <span className="text-lg font-black leading-none">{new Date(ex.exception_date).getDate()}</span>
+                      </div>
+                      <div>
+                        <p className="font-bold text-stone-900 text-sm">{ex.reason || "Belirtilmedi"}</p>
+                        <p className="text-xs font-semibold text-stone-500 mt-0.5">{staff ? `Personel: ${staff.name}` : "Tüm Salon Kapalı"}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteException(ex.id)}
+                      className="w-8 h-8 rounded-lg bg-stone-50 hover:bg-rose-50 text-stone-400 hover:text-rose-500 flex items-center justify-center transition-colors shrink-0"
+                      title="Sil"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -41,6 +41,17 @@ export default function RegisterPage() {
   const router = useRouter();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = createClient() as any;
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }: any) => {
+      if (user) {
+        supabase.from("salons").select("id").eq("owner_id", user.id).maybeSingle().then(({ data }: any) => {
+          if (!data) router.push("/setup");
+          else router.push("/dashboard");
+        });
+      }
+    });
+  }, []);
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -116,7 +127,7 @@ export default function RegisterPage() {
         throw new Error("Oturum açılamadı: " + signInError.message);
       }
 
-      const slug = generateSlug(salon.name);
+      const slug = `${generateSlug(salon.name)}-${Math.floor(1000 + Math.random() * 9000)}`;
 
       const { data: salonData, error: salonError } = await supabase
         .from("salons")
