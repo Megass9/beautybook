@@ -2,26 +2,20 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import type { Notification } from "@/types";
 import toast from "react-hot-toast";
-import { 
-  Bell, 
-  Check, 
-  CheckCircle2, 
-  Info, 
-  Megaphone, 
-  Settings, 
-  Star, 
+import {
+  Bell,
+  Check,
+  CheckCircle2,
+  Info,
+  Megaphone,
+  Settings,
+  Star,
   Clock,
   Sparkles
 } from "lucide-react";
 
-export type Notification = {
-  id: string;
-  title: string;
-  message: string;
-  created_at: string;
-  is_read: boolean;
-};
 
 interface Props {
   notifications: Notification[];
@@ -38,7 +32,7 @@ export default function NotificationsClient({ notifications: initialNotification
   const handleMarkAsRead = async (id: string) => {
     setMarkingId(id);
     const { error } = await supabase.from("notifications").update({ is_read: true }).eq("id", id);
-    
+
     if (error) {
       toast.error("Durum güncellenemedi.");
     } else {
@@ -50,10 +44,10 @@ export default function NotificationsClient({ notifications: initialNotification
   const handleMarkAllAsRead = async () => {
     const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id);
     if (unreadIds.length === 0) return;
-    
+
     // Optimistic UI update
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-    
+
     const { error } = await supabase.from("notifications").update({ is_read: true }).in("id", unreadIds);
     if (error) {
       toast.error("Bir hata oluştu.");
@@ -93,7 +87,7 @@ export default function NotificationsClient({ notifications: initialNotification
             <p className="text-3xl font-black text-stone-900 mt-1">{notifications.length}</p>
           </div>
         </div>
-        
+
         <div className="bg-gradient-to-br from-rose-50 to-orange-50 rounded-3xl p-6 border border-rose-100 shadow-sm flex items-center gap-5 relative overflow-hidden group">
           <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/40 rounded-full group-hover:scale-110 transition-transform duration-500" />
           <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center shadow-sm relative z-10">
@@ -119,28 +113,25 @@ export default function NotificationsClient({ notifications: initialNotification
 
       {/* Kontroller & Liste */}
       <div className="bg-white rounded-[2.5rem] border border-stone-200 shadow-sm p-4 sm:p-8">
-        
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div className="flex bg-stone-100 p-1.5 rounded-2xl w-max">
             <button
               onClick={() => setFilter("all")}
-              className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                filter === "all" ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
-              }`}
+              className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${filter === "all" ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
+                }`}
             >
               Tümü
             </button>
             <button
               onClick={() => setFilter("unread")}
-              className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
-                filter === "unread" ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
-              }`}
+              className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${filter === "unread" ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
+                }`}
             >
               Okunmamış
               {unreadCount > 0 && (
-                <span className={`w-5 h-5 rounded-full text-[10px] flex items-center justify-center ${
-                  filter === "unread" ? "bg-rose-100 text-rose-600" : "bg-stone-200 text-stone-600"
-                }`}>
+                <span className={`w-5 h-5 rounded-full text-[10px] flex items-center justify-center ${filter === "unread" ? "bg-rose-100 text-rose-600" : "bg-stone-200 text-stone-600"
+                  }`}>
                   {unreadCount}
                 </span>
               )}
@@ -166,22 +157,21 @@ export default function NotificationsClient({ notifications: initialNotification
             </div>
           ) : (
             filtered.map((item) => (
-              <div 
-                key={item.id} 
-                className={`group p-6 rounded-3xl border transition-all duration-300 flex flex-col sm:flex-row gap-5 ${
-                  item.is_read 
-                    ? "bg-stone-50/50 border-transparent hover:bg-stone-50 hover:border-stone-200" 
+              <div
+                key={item.id}
+                className={`group p-6 rounded-3xl border transition-all duration-300 flex flex-col sm:flex-row gap-5 ${item.is_read
+                    ? "bg-stone-50/50 border-transparent hover:bg-stone-50 hover:border-stone-200"
                     : "bg-white border-rose-100 shadow-sm hover:shadow-md hover:border-rose-200 relative overflow-hidden"
-                }`}
+                  }`}
               >
                 {!item.is_read && (
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-rose-400 to-orange-400" />
                 )}
-                
+
                 <div className="shrink-0 pt-1">
                   {getIcon(item.title, item.message)}
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-2">
                     <h3 className={`font-black text-lg ${item.is_read ? "text-stone-700" : "text-stone-900"}`}>
@@ -194,18 +184,18 @@ export default function NotificationsClient({ notifications: initialNotification
                       </span>
                     </div>
                   </div>
-                  
+
                   <p className={`text-sm leading-relaxed mb-4 ${item.is_read ? "text-stone-500" : "text-stone-600"}`}>
                     {item.message}
                   </p>
-                  
+
                   {!item.is_read && (
                     <button
                       onClick={() => handleMarkAsRead(item.id)}
                       disabled={markingId === item.id}
                       className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
                     >
-                      <Check className="w-3.5 h-3.5" /> 
+                      <Check className="w-3.5 h-3.5" />
                       {markingId === item.id ? "İşaretleniyor..." : "Okundu İşaretle"}
                     </button>
                   )}
@@ -214,7 +204,7 @@ export default function NotificationsClient({ notifications: initialNotification
             ))
           )}
         </div>
-        
+
       </div>
     </div>
   );

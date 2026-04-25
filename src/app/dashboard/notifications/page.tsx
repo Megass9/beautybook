@@ -1,19 +1,13 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
+import type { Notification } from "@/types";
 import NotificationsClient from "@/app/dashboard/notifications/NotificationsClient";
 
 export const dynamic = "force-dynamic";
 
-type NotificationItem = {
-  id: string;
-  title: string;
-  message: string;
-  created_at: string;
-  is_read: boolean;
-};
 
 export default async function NotificationsPage() {
-  const supabase = createServerClient() as any;
+  const supabase = createServerClient();
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {
@@ -48,7 +42,7 @@ export default async function NotificationsPage() {
         </div>
       </div>
 
-      <NotificationsClient notifications={(notifications || []) as NotificationItem[]} />
+      <NotificationsClient notifications={(notifications || []) as Notification[]} />
     </div>
   );
 }

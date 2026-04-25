@@ -111,6 +111,15 @@ export interface Subscription {
   created_at: string;
 }
 
+export interface Notification {
+  id: string;
+  salon_id: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -122,6 +131,7 @@ export interface Database {
       appointments: { Row: Appointment; Insert: Omit<Appointment, "id" | "created_at" | "customer" | "staff" | "service">; Update: Partial<Appointment> };
       staff_services: { Row: StaffService; Insert: StaffService; Update: Partial<StaffService> };
       subscriptions: { Row: Subscription; Insert: Omit<Subscription, "id" | "created_at">; Update: Partial<Subscription> };
+      notifications: { Row: Notification; Insert: Omit<Notification, "id" | "created_at" | "is_read"> & { is_read?: boolean }; Update: Partial<Notification> };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Başlık, mesaj ve salon ID gereklidir." }, { status: 400 });
   }
 
-  const supabase = createServerClient() as any;
+  const supabase = createServerClient();
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session?.user) {
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Bu salon için yetkiniz yok." }, { status: 403 });
   }
 
-  const adminSupabase = createAdminClient() as any;
+  const adminSupabase = createAdminClient();
   const { error } = await adminSupabase.from("notifications").insert({
     salon_id,
     title: title.trim(),

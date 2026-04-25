@@ -10,7 +10,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Başlık, mesaj ve hedef salon gereklidir." }, { status: 400 });
     }
 
-    const supabase = createAdminClient() as any;
+    const supabase = createAdminClient();
     const targetSalons = salon_id === "all"
       ? await supabase.from("salons").select("id")
       : { data: [{ id: salon_id }] };

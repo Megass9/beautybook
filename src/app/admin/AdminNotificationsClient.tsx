@@ -1,17 +1,10 @@
 "use client";
 
 import { type FormEvent, useMemo, useState } from "react";
+import type { Notification } from "@/types";
 import toast from "react-hot-toast";
 import { Send, Users, Bell, CheckCircle, Clock, Target, Search, Trash2, Filter } from "lucide-react";
 
-export type AdminNotification = {
-  id: string;
-  salon_id: string;
-  title: string;
-  message: string;
-  created_at: string;
-  is_read: boolean;
-};
 
 export type SalonOption = {
   id: string;
@@ -21,7 +14,7 @@ export type SalonOption = {
 
 interface Props {
   salons: SalonOption[];
-  notifications: AdminNotification[];
+  notifications: Notification[];
 }
 
 export default function AdminNotificationsClient({ salons, notifications }: Props) {
