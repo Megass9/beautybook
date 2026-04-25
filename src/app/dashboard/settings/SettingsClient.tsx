@@ -204,7 +204,7 @@ export default function SettingsClient({ salon, hours, staffList = [], exception
                 <label className="block text-xs font-extrabold text-stone-500 uppercase tracking-widest mb-2">Salon Adı</label>
                 <input
                   className="w-full bg-stone-50/50 border border-stone-200/80 rounded-2xl px-5 py-3.5 text-sm font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-stone-400 focus:ring-4 focus:ring-stone-100/50 transition-all"
-                  value={form.name}
+                  value={form.name || ""}
                   onChange={e => setForm({ ...form, name: e.target.value })}
                   placeholder="Örn: Luna Beauty Studio"
                   required
@@ -227,7 +227,7 @@ export default function SettingsClient({ salon, hours, staffList = [], exception
               <textarea
                 className="w-full bg-stone-50/50 border border-stone-200/80 rounded-2xl px-5 py-4 text-sm font-medium text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-stone-400 focus:ring-4 focus:ring-stone-100/50 transition-all resize-none"
                 rows={3}
-                value={form.description}
+                value={form.description || ""}
                 onChange={e => setForm({ ...form, description: e.target.value })}
                 placeholder="Örn: Profesyonel saç, makyaj ve güzellik hizmetleri sunan premium butik salon."
               />
@@ -378,7 +378,7 @@ export default function SettingsClient({ salon, hours, staffList = [], exception
                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
                 <input
                   className="w-full bg-stone-50/50 border border-stone-200/80 rounded-2xl pl-11 pr-5 py-3.5 text-sm font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-stone-400 focus:ring-4 focus:ring-stone-100/50 transition-all"
-                  value={form.phone}
+                  value={form.phone || ""}
                   onChange={e => setForm({ ...form, phone: e.target.value })}
                   placeholder="+90 5XX XXX XX XX"
                 />
@@ -388,7 +388,7 @@ export default function SettingsClient({ salon, hours, staffList = [], exception
               <label className="block text-xs font-extrabold text-stone-500 uppercase tracking-widest mb-2">Şehir</label>
               <input
                 className="w-full bg-stone-50/50 border border-stone-200/80 rounded-2xl px-5 py-3.5 text-sm font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-stone-400 focus:ring-4 focus:ring-stone-100/50 transition-all"
-                value={form.city}
+                value={form.city || ""}
                 onChange={e => setForm({ ...form, city: e.target.value })}
                 placeholder="Örn: İstanbul"
                 required
@@ -398,7 +398,7 @@ export default function SettingsClient({ salon, hours, staffList = [], exception
               <label className="block text-xs font-extrabold text-stone-500 uppercase tracking-widest mb-2">Açık Adres</label>
               <input
                 className="w-full bg-stone-50/50 border border-stone-200/80 rounded-2xl px-5 py-3.5 text-sm font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-stone-400 focus:ring-4 focus:ring-stone-100/50 transition-all"
-                value={form.address}
+                value={form.address || ""}
                 onChange={e => setForm({ ...form, address: e.target.value })}
                 placeholder="Mahalle, Cadde, Sokak, Kapı No"
               />

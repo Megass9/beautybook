@@ -24,9 +24,14 @@ export interface Database {
           is_active: boolean
           theme_color: string | null
           theme_variant: string | null
+          is_deposit_required: boolean | null
+          deposit_percentage: number | null
+          iban: string | null
+          account_holder: string | null
+          bank_name: string | null
         }
         Insert: Omit<Database['public']['Tables']['salons']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['salons']['Insert']>
+        Update: Partial<Database['public']['Tables']['salons']['Row']>
       }
       staff: {
         Row: {
@@ -37,12 +42,14 @@ export interface Database {
           email: string | null
           phone: string | null
           avatar_url: string | null
+          image_url: string | null
+          auth_user_id: string | null
           title: string | null
           role: string | null
           is_active: boolean
         }
         Insert: Omit<Database['public']['Tables']['staff']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['staff']['Insert']>
+        Update: Partial<Database['public']['Tables']['staff']['Row']>
       }
       services: {
         Row: {
@@ -57,7 +64,7 @@ export interface Database {
           is_active: boolean
         }
         Insert: Omit<Database['public']['Tables']['services']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['services']['Insert']>
+        Update: Partial<Database['public']['Tables']['services']['Row']>
       }
       appointments: {
         Row: {
@@ -74,7 +81,7 @@ export interface Database {
           notes: string | null
         }
         Insert: Omit<Database['public']['Tables']['appointments']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['appointments']['Insert']>
+        Update: Partial<Database['public']['Tables']['appointments']['Row']>
       }
       customers: {
         Row: {
@@ -87,7 +94,7 @@ export interface Database {
           notes: string | null
         }
         Insert: Omit<Database['public']['Tables']['customers']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['customers']['Insert']>
+        Update: Partial<Database['public']['Tables']['customers']['Row']>
       }
       working_hours: {
         Row: {
@@ -100,7 +107,7 @@ export interface Database {
           is_closed: boolean
         }
         Insert: Omit<Database['public']['Tables']['working_hours']['Row'], 'id'>
-        Update: Partial<Database['public']['Tables']['working_hours']['Insert']>
+        Update: Partial<Database['public']['Tables']['working_hours']['Row']>
       }
       notifications: {
         Row: {
@@ -113,6 +120,98 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['notifications']['Row'], 'id' | 'created_at' | 'is_read'> & { is_read?: boolean }
         Update: Partial<Database['public']['Tables']['notifications']['Row']>
+      }
+      staff_services: {
+        Row: {
+          staff_id: string
+          service_id: string
+        }
+        Insert: Database['public']['Tables']['staff_services']['Row']
+        Update: Partial<Database['public']['Tables']['staff_services']['Row']>
+      }
+      staff_working_hours: {
+        Row: {
+          id: string
+          staff_id: string
+          salon_id: string
+          day_of_week: number
+          start_time: string
+          end_time: string
+          is_day_off: boolean
+        }
+        Insert: Omit<Database['public']['Tables']['staff_working_hours']['Row'], 'id'>
+        Update: Partial<Database['public']['Tables']['staff_working_hours']['Row']>
+      }
+      exception_dates: {
+        Row: {
+          id: string
+          salon_id: string
+          staff_id: string | null
+          exception_date: string
+          reason: string | null
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['exception_dates']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['exception_dates']['Row']>
+      }
+      system_settings: {
+        Row: {
+          id: string
+          key: string
+          value: Json
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['system_settings']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['system_settings']['Row']>
+      }
+      support_tickets: {
+        Row: {
+          id: string
+          salon_id: string
+          subject: string
+          message: string
+          status: 'open' | 'answered' | 'closed'
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['support_tickets']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['support_tickets']['Row']>
+      }
+      ticket_messages: {
+        Row: {
+          id: string
+          ticket_id: string
+          sender: 'salon' | 'admin'
+          message: string
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['ticket_messages']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['ticket_messages']['Row']>
+      }
+      admin_logs: {
+        Row: {
+          id: string
+          salon_id: string | null
+          action_type: string
+          title: string
+          description: string | null
+          metadata: Json | null
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['admin_logs']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['admin_logs']['Row']>
+      }
+      reviews: {
+        Row: {
+          id: string
+          salon_id: string
+          appointment_id: string
+          rating: number
+          comment: string | null
+          is_verified: boolean
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['reviews']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['reviews']['Row']>
       }
       subscriptions: {
         Row: {
@@ -129,27 +228,6 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['subscriptions']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['subscriptions']['Row']>
       }
-      staff_services: {
-        Row: {
-          staff_id: string
-          service_id: string
-        }
-        Insert: Database['public']['Tables']['staff_services']['Row']
-        Update: Partial<Database['public']['Tables']['staff_services']['Insert']>
-      }
-      staff_working_hours: {
-        Row: {
-          id: string
-          staff_id: string
-          salon_id: string
-          day_of_week: number
-          start_time: string
-          end_time: string
-          is_day_off: boolean
-        }
-        Insert: Omit<Database['public']['Tables']['staff_working_hours']['Row'], 'id'>
-        Update: Partial<Database['public']['Tables']['staff_working_hours']['Row']>
-      }
     }
   }
 }
@@ -160,13 +238,13 @@ export type Service = Database['public']['Tables']['services']['Row']
 export type Appointment = Database['public']['Tables']['appointments']['Row']
 export type Customer = Database['public']['Tables']['customers']['Row']
 export type WorkingHours = Database['public']['Tables']['working_hours']['Row']
+export type WorkingHour = WorkingHours
+export type Notification = Database['public']['Tables']['notifications']['Row']
+export type Subscription = Database['public']['Tables']['subscriptions']['Row']
+export type StaffWorkingHour = Database['public']['Tables']['staff_working_hours']['Row']
 
 export type AppointmentWithDetails = Appointment & {
   staff: Staff
   service: Service
   customer: Customer
 }
-
-export type Notification = Database['public']['Tables']['notifications']['Row']
-export type Subscription = Database['public']['Tables']['subscriptions']['Row']
-export type StaffWorkingHour = Database['public']['Tables']['staff_working_hours']['Row']

@@ -58,7 +58,7 @@ export default function StaffClient({
     setEditing(s);
     setForm({
       name: s.name,
-      role: s.role,
+      role: s.role || "",
       phone: s.phone || "",
       email: s.email || "",
       password: "",
@@ -259,7 +259,7 @@ E-posta: ${credentials.email}
               <h3 className="font-semibold text-charcoal-900">{s.name}</h3>
 
               <p className="text-sm text-rose-600 font-medium mb-3">
-                {s.role}
+                {s.role || "Personel"}
               </p>
 
               <div className="space-y-1.5">
