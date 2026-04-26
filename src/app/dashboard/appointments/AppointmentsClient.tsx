@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Plus, Calendar, ChevronLeft, ChevronRight, X, Check, Clock, Trash2, Scissors, User } from "lucide-react";
+import { Plus, Calendar, ChevronLeft, ChevronRight, X, Check, Clock, Trash2, Scissors, User, MessageSquare } from 'lucide-react'
 import { format, addDays, subDays, parseISO, isSameDay } from "date-fns";
 import { tr } from "date-fns/locale";
 import { createClient } from "@/lib/supabase/client";
@@ -241,6 +241,25 @@ export default function AppointmentsClient({ salonId, initialAppointments, servi
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <p className="font-bold text-stone-900 text-base truncate">{apt.customer?.name}</p>
+                        {apt.customer?.phone && (
+                          <a
+                            href={`https://wa.me/${
+                              apt.customer.phone.replace(/\D/g, '').startsWith('0')
+                                ? '90' + apt.customer.phone.replace(/\D/g, '').substring(1)
+                                : apt.customer.phone.replace(/\D/g, '').startsWith('90')
+                                  ? apt.customer.phone.replace(/\D/g, '')
+                                  : '90' + apt.customer.phone.replace(/\D/g, '')
+                            }?text=${encodeURIComponent(
+                              `Merhaba ${apt.customer.name}, ${format(new Date(apt.appointment_date), 'd MMMM', { locale: tr })} saat ${apt.start_time.slice(0, 5)} tarihindeki randevunuzu hatırlatmak isteriz. Görüşmek üzere!`
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-all hover:scale-110 active:scale-95"
+                            title="WhatsApp Hatırlatıcı Gönder"
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                          </a>
+                        )}
                         <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full ${s.bg} ${s.text} border ${s.border}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
                           {s.label}
@@ -343,6 +362,25 @@ export default function AppointmentsClient({ salonId, initialAppointments, servi
                            {apt.customer?.name?.[0]?.toUpperCase() || "?"}
                         </div>
                         <p className="font-bold text-stone-800 text-sm whitespace-nowrap">{apt.customer?.name}</p>
+                        {apt.customer?.phone && (
+                          <a
+                            href={`https://wa.me/${
+                              apt.customer.phone.replace(/\D/g, '').startsWith('0')
+                                ? '90' + apt.customer.phone.replace(/\D/g, '').substring(1)
+                                : apt.customer.phone.replace(/\D/g, '').startsWith('90')
+                                  ? apt.customer.phone.replace(/\D/g, '')
+                                  : '90' + apt.customer.phone.replace(/\D/g, '')
+                            }?text=${encodeURIComponent(
+                              `Merhaba ${apt.customer.name}, ${format(new Date(apt.appointment_date), 'd MMMM', { locale: tr })} saat ${apt.start_time.slice(0, 5)} tarihindeki randevunuzu hatırlatmak isteriz. Görüşmek üzere!`
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-all hover:scale-110 active:scale-95"
+                            title="WhatsApp Hatırlatıcı Gönder"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                          </a>
+                        )}
                       </div>
                     </td>
                     <td className="py-5">

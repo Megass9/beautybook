@@ -21,6 +21,7 @@ import {
   Mail,
   Smartphone
 } from "lucide-react";
+import SalonActionButtons from "../dashboard/SalonActionButtons";
 
 export default function SalonsClient({ initialSalons }: { initialSalons: any[] }) {
   const [selectedSalon, setSelectedSalon] = useState<any>(null);
@@ -233,7 +234,8 @@ export default function SalonsClient({ initialSalons }: { initialSalons: any[] }
                    </div>
                 </div>
 
-                <div className="relative z-10 pt-10">
+                <div className="relative z-10 pt-10 space-y-4">
+                   <SalonActionButtons salonId={selectedSalon.id} isActive={selectedSalon.is_active} />
                    <a href={`/salon/${selectedSalon.slug}`} target="_blank" className="flex items-center justify-center gap-2 w-full py-4 bg-rose-500 hover:bg-rose-600 text-white font-black text-xs rounded-2xl transition-all shadow-lg shadow-rose-900/40 uppercase tracking-widest">
                       SİTEYİ AÇ <ExternalLink className="w-4 h-4" />
                    </a>

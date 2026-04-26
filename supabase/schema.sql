@@ -24,7 +24,8 @@ CREATE TABLE salons (
   logo_url      TEXT,
   theme_color   TEXT DEFAULT '#e11d48',
   theme_variant TEXT DEFAULT 'elegantDark',
-  is_active     BOOLEAN DEFAULT TRUE
+  is_active     BOOLEAN DEFAULT TRUE,
+  site_config   JSONB DEFAULT '{"sections": [], "globalConfig": {}}'::jsonb
 );
 
 -- Staff members

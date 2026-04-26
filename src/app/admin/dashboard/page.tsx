@@ -1,14 +1,19 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import SalonActionButtons from "./SalonActionButtons";
+import { format, addDays } from "date-fns";
+import { tr } from "date-fns/locale";
 import {
   Building2,
   Users,
   Calendar,
   Bell,
-  TrendingUp,
   Activity,
   CheckCircle,
   Clock,
-  ArrowUpRight
+  ArrowUpRight,
+  CreditCard,
+  TrendingUp,
+  Ticket
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -18,19 +23,21 @@ function StatCard({
   value,
   subtitle,
   icon: Icon,
+  iconColorClass,
   trend
 }: {
   title: string;
   value: string | number;
   subtitle: string;
   icon: any;
+  iconColorClass: string;
   trend?: string;
 }) {
   return (
     <div className="bg-white rounded-2xl border border-stone-200 p-5 shadow-sm hover:shadow-md transition-all group">
       <div className="flex items-start justify-between mb-4">
-        <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center">
-          <Icon className="w-5 h-5 text-rose-600" />
+        <div className={`w-10 h-10 ${iconColorClass} rounded-xl flex items-center justify-center text-white`}>
+          <Icon className="w-5 h-5" />
         </div>
         <ArrowUpRight className="w-4 h-4 text-stone-300 group-hover:text-stone-500 transition-colors" />
       </div>
@@ -62,6 +69,14 @@ export default async function AdminDashboardPage() {
     .from("appointments")
     .select("id, status, created_at");
 
+  const { data: subscriptionsData } = await supabase
+    .from("subscriptions")
+    .select("id, status, amount, end_date, created_at");
+
+  const { data: supportTicketsData } = await supabase
+    .from("support_tickets")
+    .select("id, status");
+
   const { data: notifications } = await supabase
     .from("notifications")
     .select("id, created_at");
@@ -73,6 +88,20 @@ export default async function AdminDashboardPage() {
   const totalAppointments = appointments?.length || 0;
   const completedAppointments = appointments?.filter((a: any) => a.status === 'completed').length || 0;
   const totalNotifications = notifications?.length || 0;
+
+  const today = new Date();
+  const thirtyDaysAgo = addDays(today, -30);
+  const thirtyDaysFromNow = addDays(today, 30);
+
+  const newSalonsLast30Days = salons?.filter((s: any) => new Date(s.created_at) >= thirtyDaysAgo).length || 0;
+
+  const expiringSubscriptionsNext30Days = subscriptionsData?.filter((s: any) =>
+    s.status === 'active' &&
+    s.end_date &&
+    new Date(s.end_date) > today &&
+    new Date(s.end_date) <= thirtyDaysFromNow
+  ).length || 0;
+  const openSupportTickets = supportTicketsData?.filter((t: any) => t.status === 'open').length || 0;
 
   return (
     <div className="space-y-8">
@@ -88,20 +117,22 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Toplam Salon"
           value={totalSalons}
           subtitle={`${activeSalons} aktif salon`}
           icon={Building2}
+          iconColorClass="bg-rose-500"
           trend={`${Math.round((activeSalons / Math.max(totalSalons, 1)) * 100)}% aktif`}
         />
 
         <StatCard
           title="Kullanıcı"
           value={totalUsers}
-          subtitle="Salon sahibi"
+          subtitle="Toplam salon sahibi"
           icon={Users}
+          iconColorClass="bg-blue-500"
         />
 
         <StatCard
@@ -109,14 +140,41 @@ export default async function AdminDashboardPage() {
           value={totalAppointments}
           subtitle={`${completedAppointments} tamamlandı`}
           icon={Calendar}
+          iconColorClass="bg-emerald-500"
           trend={`${Math.round((completedAppointments / Math.max(totalAppointments, 1)) * 100)}% başarı`}
         />
 
         <StatCard
           title="Bildirim"
           value={totalNotifications}
-          subtitle="Admin tarafından"
+          subtitle="Gönderilen toplam bildirim"
           icon={Bell}
+          iconColorClass="bg-amber-500"
+        />
+      </div>
+
+      {/* Quick Overview / Alerts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatCard
+          title="Yeni Salon (30 Gün)"
+          value={newSalonsLast30Days}
+          subtitle="Son 30 günde kayıt olan"
+          icon={Building2}
+          iconColorClass="bg-purple-500"
+        />
+        <StatCard
+          title="Abonelik Bitiyor"
+          value={expiringSubscriptionsNext30Days}
+          subtitle="Önümüzdeki 30 günde"
+          icon={Clock}
+          iconColorClass="bg-orange-500"
+        />
+        <StatCard
+          title="Açık Destek Talebi"
+          value={openSupportTickets}
+          subtitle="Yanıt bekleyen talepler"
+          icon={Ticket}
+          iconColorClass="bg-red-500"
         />
       </div>
 
@@ -141,27 +199,14 @@ export default async function AdminDashboardPage() {
                     <div>
                       <p className="font-bold text-stone-900 text-sm">{salon.name}</p>
                       <p className="text-[10px] text-stone-400 font-bold uppercase tracking-widest">
-                        {new Date(salon.created_at).toLocaleDateString('tr-TR')}
+                        {format(new Date(salon.created_at), "d MMM yyyy", { locale: tr })}
                       </p>
                     </div>
                   </div>
-                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                    salon.is_active
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {salon.is_active ? (
-                      <>
-                        <CheckCircle className="w-3 h-3" />
-                        Aktif
-                      </>
-                    ) : (
-                      <>
-                        <Clock className="w-3 h-3" />
-                        Pasif
-                      </>
-                    )}
-                  </div>
+                  <SalonActionButtons 
+                    salonId={salon.id} 
+                    isActive={salon.is_active} 
+                  />
                 </div>
               ))}
             </div>

@@ -1,3 +1,4 @@
+import React from "react";
 import { createClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
 import { unstable_noStore as noStore } from "next/cache";
@@ -17,6 +18,9 @@ import {
   Heart,
   Plus
 } from "lucide-react";
+import BlogSection from "./BlogSection";
+import GallerySection from "./GallerySection";
+import CampaignSection from "./CampaignSection";
 
 const DAYS_TR = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
 
@@ -79,13 +83,16 @@ export default async function SalonPage({ params }: { params: { slug: string } }
   if (error || !salon) notFound();
 
   const todayStr = new Date().toISOString().split("T")[0];
-  const [{ data: services }, { data: staff }, { data: hours }, { data: reviews }, { data: exceptions }, { data: subscriptions }] = await Promise.all([
+  const [{ data: services }, { data: staff }, { data: hours }, { data: reviews }, { data: exceptions }, { data: subscriptions }, { data: blogPosts }, { data: galleryItems }, { data: campaigns }] = await Promise.all([
     supabase.from("services").select("*").eq("salon_id", salon.id).eq("is_active", true).order("category"),
     supabase.from("staff").select("*").eq("salon_id", salon.id).eq("is_active", true),
     supabase.from("working_hours").select("*").eq("salon_id", salon.id).order("day_of_week"),
     supabase.from("reviews").select("*").eq("salon_id", salon.id).eq("is_verified", true).order("created_at", { ascending: false }).limit(6),
     supabase.from("exception_dates").select("*").eq("salon_id", salon.id).gte("exception_date", todayStr),
     supabase.from("subscriptions").select("*").eq("salon_id", salon.id).order("created_at", { ascending: false }),
+    supabase.from("blog_posts").select("*").eq("salon_id", salon.id).eq("is_published", true).order("created_at", { ascending: false }).limit(3),
+    supabase.from("gallery_items").select("*").eq("salon_id", salon.id).order("created_at", { ascending: false }).limit(12),
+    supabase.from("campaigns").select("*").eq("salon_id", salon.id).eq("is_active", true).order("created_at", { ascending: false }),
   ]);
 
   const openHours = hours?.filter(h => !h.is_closed) || [];
@@ -253,6 +260,13 @@ export default async function SalonPage({ params }: { params: { slug: string } }
         {/* Bottom wave */}
       </div>
 
+      <div className="max-w-5xl mx-auto px-6 py-12 space-y-24">
+        <CampaignSection 
+          campaigns={campaigns || []}
+          primaryColor={primaryColor}
+        />
+      </div>
+
       {/* ══ WORKING HOURS STRIP ══ */}
       {openHours.length > 0 && (
         <div className={`bg-white border-b border-stone-200 py-6 px-6 overflow-x-auto hide-scroll sticky top-0 z-30 ${isMinimal ? "border-t border-stone-900" : "shadow-sm"}`}>
@@ -400,6 +414,21 @@ export default async function SalonPage({ params }: { params: { slug: string } }
           )}
         </section>
 
+        {/* ══ GALLERY ══ */}
+        <GallerySection 
+          items={galleryItems || []}
+          titleClass={titleClass}
+          primaryColor={primaryColor}
+        />
+
+        {/* ══ BLOG ══ */}
+        <BlogSection 
+          posts={blogPosts || []}
+          titleClass={titleClass}
+          cardBaseClass={cardBaseClass}
+          primaryColor={primaryColor}
+        />
+
         {/* ══ STAFF ══ */}
         {staff && staff.length > 0 && (
           <section>
@@ -455,6 +484,7 @@ export default async function SalonPage({ params }: { params: { slug: string } }
                 workingHours={hours || []}
                 exceptionDates={exceptions || []}
                 subscriptions={subscriptions || []}
+                campaigns={campaigns || []}
                 designVariant={designVariant}
                 isLuxury={isLuxury}
                 isMinimal={isMinimal}

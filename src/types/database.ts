@@ -29,6 +29,7 @@ export interface Database {
           iban: string | null
           account_holder: string | null
           bank_name: string | null
+          site_config: { sections: any[]; globalConfig: Record<string, any> } | null
         }
         Insert: Omit<Database['public']['Tables']['salons']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['salons']['Row']>
@@ -228,6 +229,49 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['subscriptions']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['subscriptions']['Row']>
       }
+      blog_posts: {
+        Row: {
+          id: string
+          created_at: string
+          salon_id: string
+          title: string
+          content: string
+          image_url: string | null
+          slug: string
+          is_published: boolean
+        }
+        Insert: Omit<Database['public']['Tables']['blog_posts']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['blog_posts']['Row']>
+      }
+      gallery_items: {
+        Row: {
+          id: string
+          created_at: string
+          salon_id: string
+          image_url: string
+          title: string | null
+          category: string | null
+        }
+        Insert: Omit<Database['public']['Tables']['gallery_items']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['gallery_items']['Row']>
+      }
+      campaigns: {
+        Row: {
+          id: string
+          created_at: string
+          salon_id: string
+          title: string
+          description: string | null
+          discount_type: 'percent' | 'fixed'
+          discount_value: number
+          start_date: string
+          end_date: string
+          code: string | null
+          is_active: boolean
+        }
+        Insert: Omit<Database['public']['Tables']['campaigns']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['campaigns']['Row']>
+      }
     }
   }
 }
@@ -242,6 +286,9 @@ export type WorkingHour = WorkingHours
 export type Notification = Database['public']['Tables']['notifications']['Row']
 export type Subscription = Database['public']['Tables']['subscriptions']['Row']
 export type StaffWorkingHour = Database['public']['Tables']['staff_working_hours']['Row']
+export type BlogPost = Database['public']['Tables']['blog_posts']['Row']
+export type GalleryItem = Database['public']['Tables']['gallery_items']['Row']
+export type Campaign = Database['public']['Tables']['campaigns']['Row']
 
 export type AppointmentWithDetails = Appointment & {
   staff: Staff

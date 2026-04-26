@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { formatCurrency } from '@/lib/utils'
 import { format, addDays, startOfWeek, isSameDay, addWeeks, subWeeks, parseISO } from 'date-fns'
 import { tr } from 'date-fns/locale'
-import { ChevronLeft, ChevronRight, Plus, X, Calendar, Clock } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, X, Calendar, Clock, MessageSquare } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 type Apt = any
@@ -48,6 +48,7 @@ export function AppointmentsClient({ salonId, initialAppointments, staff, servic
     const { error } = await supabase.from('appointments').update({ status }).eq('id', aptId)
     if (error) { toast.error(error.message); return }
     setAppointments(a => a.map(x => x.id === aptId ? { ...x, status } : x))
+    
     toast.success('Durum güncellendi')
   }
 
@@ -186,6 +187,35 @@ export function AppointmentsClient({ salonId, initialAppointments, staff, servic
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
+                      {apt.customer?.phone ? (
+                        <a
+                          href={`https://wa.me/${
+                            apt.customer.phone.replace(/\D/g, '').startsWith('0')
+                              ? '90' + apt.customer.phone.replace(/\D/g, '').substring(1)
+                              : apt.customer.phone.replace(/\D/g, '').startsWith('90')
+                                ? apt.customer.phone.replace(/\D/g, '')
+                                : '90' + apt.customer.phone.replace(/\D/g, '')
+                          }?text=${encodeURIComponent(
+                            `Merhaba ${apt.customer.name}, ${format(parseISO(apt.start_time), 'd MMMM HH:mm', { locale: tr })} tarihindeki randevunuzu hatırlatmak isteriz. Görüşmek üzere!`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 rounded-xl hover:bg-emerald-50 text-emerald-600 transition-all hover:scale-110 active:scale-95"
+                          title="WhatsApp Hatırlatıcı Gönder"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </a>
+                      ) : (
+                        <span className="flex items-center gap-1">
+                          <span
+                            className="p-2 rounded-xl text-stone-300 cursor-not-allowed"
+                            title="Müşteri telefon numarası eksik"
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                          </span>
+                          <span className="text-xs text-stone-400">Telefon Yok</span>
+                        </span>
+                      )}
                       <div className="text-right hidden sm:block">
                         <div className="text-sm font-semibold text-charcoal-700">{format(parseISO(apt.start_time), 'HH:mm')}</div>
                         {apt.service?.price && <div className="text-xs text-charcoal-400">{formatCurrency(apt.service.price)}</div>}
@@ -217,7 +247,33 @@ export function AppointmentsClient({ salonId, initialAppointments, staff, servic
                       <div className="text-center w-10">
                         <div className="text-xs text-charcoal-400">{format(parseISO(apt.start_time), 'd MMM', { locale: tr })}</div>
                       </div>
-                      <div>
+                      <div className="flex items-center gap-3">
+                        {apt.customer?.phone ? (
+                          <a
+                            href={`https://wa.me/${
+                              apt.customer.phone.replace(/\D/g, '').startsWith('0')
+                                ? '90' + apt.customer.phone.replace(/\D/g, '').substring(1)
+                                : apt.customer.phone.replace(/\D/g, '').startsWith('90')
+                                  ? apt.customer.phone.replace(/\D/g, '')
+                                  : '90' + apt.customer.phone.replace(/\D/g, '')
+                            }?text=${encodeURIComponent(
+                              `Merhaba ${apt.customer.name}, ${format(parseISO(apt.start_time), 'd MMMM HH:mm', { locale: tr })} tarihindeki randevunuzu hatırlatmak isteriz. Görüşmek üzere!`
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 rounded-xl hover:bg-emerald-50 text-emerald-600 transition-all hover:scale-110"
+                            title="WhatsApp Hatırlatıcı Gönder"
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                          </a>
+                        ) : (
+                          <span className="flex items-center gap-1">
+                            <span className="p-2 rounded-xl text-stone-300 cursor-not-allowed" title="Müşteri telefon numarası eksik">
+                              <MessageSquare className="w-4 h-4" />
+                            </span>
+                            <span className="text-xs text-stone-400">Telefon Yok</span>
+                          </span>                          
+                        )}
                         <div className="font-medium text-charcoal-700 text-sm">{apt.customer?.name}</div>
                         <div className="text-xs text-charcoal-400">{apt.service?.name}</div>
                       </div>

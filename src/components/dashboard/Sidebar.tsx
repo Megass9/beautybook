@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles, LayoutDashboard, Calendar, Scissors, Users, UserCircle, Settings, ExternalLink, LogOut, ChevronRight, TrendingUp, Bell, Palette, CreditCard, LifeBuoy } from "lucide-react";
+import { Sparkles, LayoutDashboard, Calendar, Scissors, Users, UserCircle, Settings, ExternalLink, LogOut, ChevronRight, TrendingUp, Bell, Palette, CreditCard, LifeBuoy, BookOpen, Image as ImageIcon, Tag } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import type { Salon } from "@/types";
@@ -13,6 +13,9 @@ const NAV = [
   { href: "/dashboard/services", label: "Hizmetler", icon: Scissors },
   { href: "/dashboard/staff", label: "Personel", icon: Users },
   { href: "/dashboard/customers", label: "Müşteriler", icon: UserCircle },
+  { href: "/dashboard/blog", label: "Blog Yazıları", icon: BookOpen },
+  { href: "/dashboard/gallery", label: "Galeri", icon: ImageIcon },
+  { href: "/dashboard/campaigns", label: "Kampanyalar", icon: Tag },
   { href: "/dashboard/notifications", label: "Bildirimler", icon: Bell },
   { href: "/dashboard/reports", label: "Finans & Raporlar", icon: TrendingUp, premium: true },
   { href: "/dashboard/support", label: "Destek Talebi", icon: LifeBuoy, premium: true },
@@ -25,7 +28,7 @@ export default function DashboardSidebar({ salon, isLocked, activeSubscription }
   const router = useRouter();
   const supabase = createClient();
 
-  const isPremiumPlan = activeSubscription && activeSubscription.amount >= 900;
+  const isPremiumPlan = activeSubscription && activeSubscription.amount >= 799;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

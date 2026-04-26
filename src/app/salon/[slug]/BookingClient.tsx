@@ -7,7 +7,7 @@ import {
 import { tr } from "date-fns/locale";
 import {
   Calendar, Clock, Scissors, User, ChevronRight, Check,
-  ArrowLeft, Loader2, AlertCircle, Quote, CreditCard
+  ArrowLeft, Loader2, AlertCircle, Quote, CreditCard, Sparkles, X
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
@@ -22,6 +22,7 @@ interface Props {
   workingHours: any[];
   exceptionDates?: any[];
   subscriptions?: any[];
+  campaigns?: any[];
   designVariant: string;
   isLuxury: boolean;
   isMinimal: boolean;
@@ -29,7 +30,7 @@ interface Props {
 }
 
 export default function BookingClient({ 
-  salonId, salon, services, staffList, workingHours, exceptionDates = [], subscriptions = [],
+  salonId, salon, services, staffList, workingHours, exceptionDates = [], subscriptions = [], campaigns = [],
   designVariant, isLuxury, isMinimal, isFresh 
 }: Props) {
   const supabaseRef = useRef(createClient() as any);
@@ -43,6 +44,8 @@ export default function BookingClient({
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [customerForm, setCustomerForm] = useState({ name: "", phone: "", note: "", receiptNo: "" });
   const [busySlots, setBusySlots] = useState<string[]>([]);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCampaign, setAppliedCampaign] = useState<any>(null);
 
   const timeSlots = useMemo(() => {
     const slots: string[] = [];
@@ -113,6 +116,45 @@ export default function BookingClient({
     // Eğer şu anki zaman mühlet tarihini geçtiyse kilitli
     return new Date() > graceDate;
   }, [salon.created_at, subscriptions]);
+
+  const calculateDiscountedPrice = (originalPrice: number) => {
+    let price = originalPrice;
+    
+    // 1. Otomatik kampanyaları kontrol et (kodsuz olanlar)
+    const now = new Date();
+    const autoCampaign = campaigns.find(c => 
+      c.is_active && !c.code && 
+      new Date(c.start_date) <= now && new Date(c.end_date) >= now
+    );
+
+    const finalCampaign = appliedCampaign || autoCampaign;
+
+    if (finalCampaign) {
+      if (finalCampaign.discount_type === 'percent') {
+        price = price * (1 - finalCampaign.discount_value / 100);
+      } else {
+        price = Math.max(0, price - finalCampaign.discount_value);
+      }
+    }
+    
+    return { price, campaign: finalCampaign };
+  };
+
+  const handleApplyCoupon = () => {
+    const now = new Date();
+    const campaign = campaigns.find(c => 
+      c.code?.toUpperCase() === couponCode.toUpperCase() && 
+      c.is_active && 
+      new Date(c.start_date) <= now && new Date(c.end_date) >= now
+    );
+
+    if (campaign) {
+      setAppliedCampaign(campaign);
+      toast.success(`"${campaign.title}" uygulandı!`);
+    } else {
+      toast.error("Geçersiz veya süresi dolmuş kupon kodu.");
+    }
+  };
 
   // Temaya göre dinamik renk sınıfları
   const themeClasses = {
@@ -186,6 +228,9 @@ export default function BookingClient({
       startDate.setHours(h, m, 0, 0);
       const endDate = dateFnsAddMinutes(startDate, selectedService.duration_minutes);
 
+      const { price: finalPrice, campaign } = calculateDiscountedPrice(selectedService.price);
+      const campaignNote = campaign ? `[Kampanya: ${campaign.title} - ₺${selectedService.price} -> ₺${finalPrice}]` : "";
+
       const { error: aptError } = await supabase.from("appointments").insert({
         salon_id: salonId,
         customer_id: customerId,
@@ -195,9 +240,9 @@ export default function BookingClient({
         start_time: selectedTime,
         end_time: format(endDate, "HH:mm"),
         status: "pending",
-        notes: customerForm.receiptNo 
+        notes: `${campaignNote} ${customerForm.receiptNo 
           ? `Dekont Sorgu No: ${customerForm.receiptNo}\nNot: ${customerForm.note}` 
-          : customerForm.note,
+          : customerForm.note}`.trim(),
       });
 
       if (aptError) throw aptError;
@@ -580,9 +625,55 @@ export default function BookingClient({
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] font-extrabold text-stone-400 uppercase tracking-widest">Toplam</p>
-                      <p className={`text-2xl font-black ${isLuxury ? "text-purple-600" : "text-stone-900"}`}>₺{selectedService?.price}</p>
+                      <div className="flex flex-col items-end">
+                        {calculateDiscountedPrice(selectedService?.price || 0).campaign ? (
+                          <>
+                            <span className="text-xs text-stone-400 line-through">₺{selectedService?.price}</span>
+                            <p className={`text-2xl font-black ${isLuxury ? "text-purple-600" : "text-stone-900"}`}>
+                              ₺{calculateDiscountedPrice(selectedService?.price || 0).price}
+                            </p>
+                          </>
+                        ) : (
+                          <p className={`text-2xl font-black ${isLuxury ? "text-purple-600" : "text-stone-900"}`}>
+                            ₺{selectedService?.price}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
+
+                  {!appliedCampaign && campaigns.some(c => c.code && c.is_active) && (
+                    <div className="mt-6 pt-6 border-t border-stone-200/80">
+                       <label className="block text-[10px] font-extrabold text-stone-500 uppercase tracking-widest mb-2 px-1">Kupon Kodu</label>
+                       <div className="flex gap-2">
+                         <input
+                           type="text"
+                           placeholder="Kupon kodunuz varsa girin"
+                           value={couponCode}
+                           onChange={(e) => setCouponCode(e.target.value)}
+                           className="flex-1 bg-white border border-stone-200 rounded-xl px-4 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-stone-100"
+                         />
+                         <button
+                           onClick={handleApplyCoupon}
+                           className="bg-stone-900 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all"
+                         >
+                           Uygula
+                         </button>
+                       </div>
+                    </div>
+                  )}
+
+                  {appliedCampaign && (
+                    <div className="mt-4 p-3 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center justify-between">
+                       <div className="flex items-center gap-2">
+                         <Sparkles className="w-4 h-4 text-emerald-500" />
+                         <span className="text-xs font-bold text-emerald-700">{appliedCampaign.title} Uygulandı</span>
+                       </div>
+                       <button onClick={() => setAppliedCampaign(null)} className="text-emerald-400 hover:text-emerald-600">
+                         <X className="w-4 h-4" />
+                       </button>
+                    </div>
+                  )}
 
                   {salon?.is_deposit_required && salon?.iban && (
                     <div className="mt-6 pt-6 border-t border-stone-200/80">
@@ -596,7 +687,7 @@ export default function BookingClient({
                         <div className="bg-white rounded-xl p-3 border border-purple-100 space-y-2 text-sm">
                           <div className="flex justify-between items-center">
                             <span className="text-stone-500 font-medium text-xs">Kapora Tutarı:</span>
-                            <span className="font-black text-purple-600">₺{Math.round((selectedService?.price || 0) * (salon.deposit_percentage || 20) / 100)}</span>
+                            <span className="font-black text-purple-600">₺{Math.round(calculateDiscountedPrice(selectedService?.price || 0).price * (salon.deposit_percentage || 20) / 100)}</span>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-stone-500 font-medium text-xs">Banka:</span>

@@ -20,6 +20,7 @@
     "react-dom": "^18",
     "react-hot-toast": "^2.4.1",
     "tailwind-merge": "^2.3.0",
+    "twilio": "^6.0.0",
     "typescript": "^5"
   },
   "devDependencies": {

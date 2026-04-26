@@ -1,6 +1,7 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import ReportsClient from "./ReportsClient";
+import { TrendingUp } from "lucide-react";
 
 export default async function ReportsPage() {
   const supabase = createServerClient() as any;
@@ -28,9 +29,9 @@ export default async function ReportsPage() {
     .eq("key", "pricing")
     .single();
 
-  const pricing = pricingSettings?.value || { premium: 900 };
+  const pricing = pricingSettings?.value || { pro: 799 };
   const activeSub = (subscriptions || []).find((s: any) => s.status === "active");
-  const isPremium = activeSub && activeSub.amount >= pricing.premium;
+  const isPremium = activeSub && activeSub.amount >= (pricing.pro || 799);
 
   if (!isPremium) {
     return (
@@ -59,5 +60,3 @@ export default async function ReportsPage() {
 
   return <ReportsClient initialAppointments={appointments || []} />;
 }
-
-import { TrendingUp } from "lucide-react";

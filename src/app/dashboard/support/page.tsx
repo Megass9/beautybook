@@ -31,9 +31,9 @@ export default async function SupportPage() {
     .eq("key", "pricing")
     .single();
 
-  const pricing = pricingSettings?.value || { premium: 900 };
+  const pricing = pricingSettings?.value || { pro: 799 };
   const activeSub = (subscriptions || []).find((s: any) => s.status === "active");
-  const isPremium = activeSub && activeSub.amount >= pricing.premium;
+  const isPremium = activeSub && activeSub.amount >= (pricing.pro || 799);
 
   if (!isPremium) {
     return (
