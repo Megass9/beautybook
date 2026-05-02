@@ -28,7 +28,7 @@ const NAV_ITEMS = [
   { href: "/admin/test-notifications", label: "Tablo Testi", icon: TestTube, color: "text-stone-500" },
 ];
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
 
   return (
@@ -60,6 +60,7 @@ export default function AdminSidebar() {
               <Link
                 key={href}
                 href={href}
+                onClick={() => onClose?.()}
                 className={`group flex items-center justify-between px-3 py-3 rounded-2xl text-sm font-bold transition-all duration-300 ${
                   isActive
                     ? "bg-stone-800/80 text-white shadow-inner border border-stone-700/50"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { format, addDays, differenceInDays } from "date-fns";
 import { tr } from "date-fns/locale";
@@ -35,6 +36,7 @@ export default function AdminClient({
   initialTickets: any[]
 }) {
   const supabase = createClient() as any;
+  const router = useRouter();
   const [subscriptions, setSubscriptions] = useState(initialSubscriptions);
   const [salons, setSalons] = useState(initialSalons);
   const [tickets, setTickets] = useState(initialTickets);
@@ -46,25 +48,24 @@ export default function AdminClient({
     const confirmApprove = window.confirm(`${sub.salon?.name} salonunun ödemesini onaylıyor musunuz?`);
     if (!confirmApprove) return;
 
-    const startDate = new Date();
-    const endDate = addDays(startDate, 30);
-
     try {
-      const { error } = await supabase
-        .from("subscriptions")
-        .update({
-          status: "active",
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString()
-        })
-        .eq("id", sub.id);
+      const res = await fetch("/api/admin/approve-subscription", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      } as HeadersInit,
+      body: JSON.stringify({ subId: sub.id }),
+    });
 
-      if (error) throw error;
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "İşlem başarısız");
 
       setSubscriptions(prev => prev.map(s => 
-        s.id === sub.id ? { ...s, status: "active", start_date: startDate.toISOString(), end_date: endDate.toISOString() } : s
+        s.id === sub.id ? { ...s, ...data.data } : s
       ));
       toast.success("Ödeme onaylandı!");
+      router.refresh();
     } catch (error: any) {
       toast.error("Hata: " + error.message);
     }
@@ -137,14 +138,14 @@ export default function AdminClient({
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex gap-4 p-1.5 bg-white rounded-2xl border border-stone-200 shadow-sm w-fit mx-auto">
-          <button onClick={() => setActiveTab("payments")} className={`flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-black transition-all ${activeTab === "payments" ? "bg-rose-500 text-white shadow-lg shadow-rose-200" : "text-stone-400 hover:bg-stone-50"}`}>
+      <div className="flex gap-2 md:gap-4 p-1.5 bg-white rounded-2xl border border-stone-200 shadow-sm w-full md:w-fit mx-auto overflow-x-auto no-scrollbar">
+        <button onClick={() => setActiveTab("payments")} className={`flex items-center justify-center gap-2 px-4 md:px-8 py-3 rounded-xl text-xs md:text-sm font-black transition-all shrink-0 ${activeTab === "payments" ? "bg-rose-500 text-white shadow-lg shadow-rose-200" : "text-stone-400 hover:bg-stone-50"}`}>
             <CreditCard className="w-4 h-4" /> Ödemeler
           </button>
-          <button onClick={() => setActiveTab("salons")} className={`flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-black transition-all ${activeTab === "salons" ? "bg-stone-900 text-white shadow-lg shadow-stone-300" : "text-stone-400 hover:bg-stone-50"}`}>
+        <button onClick={() => setActiveTab("salons")} className={`flex items-center justify-center gap-2 px-4 md:px-8 py-3 rounded-xl text-xs md:text-sm font-black transition-all shrink-0 ${activeTab === "salons" ? "bg-stone-900 text-white shadow-lg shadow-stone-300" : "text-stone-400 hover:bg-stone-50"}`}>
             <LayoutGrid className="w-4 h-4" /> Salonlar
           </button>
-          <button onClick={() => setActiveTab("tickets")} className={`flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-black transition-all ${activeTab === "tickets" ? "bg-amber-500 text-white shadow-lg shadow-amber-200" : "text-stone-400 hover:bg-stone-50"}`}>
+        <button onClick={() => setActiveTab("tickets")} className={`flex items-center justify-center gap-2 px-4 md:px-8 py-3 rounded-xl text-xs md:text-sm font-black transition-all shrink-0 ${activeTab === "tickets" ? "bg-amber-500 text-white shadow-lg shadow-amber-200" : "text-stone-400 hover:bg-stone-50"}`}>
             <LifeBuoy className="w-4 h-4" /> Talepler
           </button>
         </div>
@@ -162,8 +163,8 @@ export default function AdminClient({
         </div>
 
         {activeTab === "payments" && (
-           <div className="bg-white rounded-[2.5rem] border border-stone-200 shadow-sm overflow-hidden animate-fade-in">
-              <table className="w-full text-left">
+           <div className="bg-white rounded-[2.5rem] border border-stone-200 shadow-sm overflow-hidden animate-fade-in overflow-x-auto">
+              <table className="w-full text-left min-w-[600px]">
                 <thead>
                   <tr className="bg-stone-50/50 text-[10px] font-black text-stone-400 uppercase tracking-widest border-b border-stone-100">
                     <th className="px-8 py-6">Salon</th>

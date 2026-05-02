@@ -111,22 +111,18 @@ export default function AdminNotificationsClient({ salons, notifications }: Prop
           <div className="mt-6 space-y-6">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-3">Salon Seçimi</label>
-              <div className="relative">
-                <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-                <select
+              <select
                 value={targetSalon}
                 onChange={(event) => setTargetSalon(event.target.value)}
-                className="w-full rounded-2xl border border-stone-200 bg-stone-50 pl-11 pr-4 py-3 text-sm font-bold text-stone-900 outline-none focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100/50 transition-all appearance-none shadow-inner"
+                className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 outline-none focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100/50 transition-all"
               >
                 <option value="all">Tüm Salonlar</option>
                 {salons.map((salon) => (
                   <option key={salon.id} value={salon.id}>
-                    {salon.name} ({salon.city || "-"})
+                    {salon.name} {salon.city ? ` - ${salon.city}` : ""}
                   </option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
-              </div>
             </div>
 
             <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
@@ -157,7 +153,7 @@ export default function AdminNotificationsClient({ salons, notifications }: Prop
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder="Örneğin: Yeni Promosyon Duyurusu"
-                className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 placeholder-slate-400 focus:border-rose-400 focus:bg-white focus:ring-4 focus:ring-rose-100/50 outline-none transition-all"
+                className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm font-bold text-stone-900 placeholder-stone-400 focus:border-rose-400 focus:bg-white focus:ring-4 focus:ring-rose-100/50 outline-none transition-all"
               />
             </div>
 
@@ -170,14 +166,14 @@ export default function AdminNotificationsClient({ salons, notifications }: Prop
                 onChange={(event) => setMessage(event.target.value)}
                 rows={6}
                 placeholder="Salon sahibine iletmek istediğiniz mesajı yazın..."
-                className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 placeholder-slate-400 focus:border-rose-400 focus:bg-white focus:ring-4 focus:ring-rose-100/50 outline-none resize-none transition-all"
+                className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm font-bold text-stone-900 placeholder-stone-400 focus:border-rose-400 focus:bg-white focus:ring-4 focus:ring-rose-100/50 outline-none resize-none transition-all"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-3 rounded-3xl bg-gradient-to-r from-rose-500 to-rose-600 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-rose-500/25 hover:from-rose-600 hover:to-rose-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-rose-500/25 hover:from-rose-600 hover:to-rose-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -196,10 +192,10 @@ export default function AdminNotificationsClient({ salons, notifications }: Prop
       </section>
 
       <section>
-        <div className="rounded-3xl border border-slate-200/70 bg-white p-6 shadow-xl">
+        <div className="rounded-[2.5rem] border border-stone-200 bg-white p-8 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-gradient-to-br from-amber-500 to-amber-600 shadow-lg shadow-amber-500/20">
-              <Bell className="h-5 w-5 text-white" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 shadow-lg shadow-amber-500/20">
+              <Bell className="h-6 w-6 text-white" />
             </div>
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Son Bildirimler</p>
@@ -217,13 +213,13 @@ export default function AdminNotificationsClient({ salons, notifications }: Prop
                   placeholder="Geçmişte ara..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-sm rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-stone-200 bg-stone-50 focus:bg-white outline-none transition-all"
                 />
               </div>
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value as any)}
-                className="px-4 py-2 text-sm rounded-2xl border border-slate-200 bg-slate-50 outline-none cursor-pointer"
+                className="px-4 py-2.5 text-sm rounded-xl border border-stone-200 bg-stone-50 outline-none cursor-pointer"
               >
                 <option value="all">Tümü</option>
                 <option value="unread">Okunmamış</option>
@@ -231,14 +227,15 @@ export default function AdminNotificationsClient({ salons, notifications }: Prop
             </div>
 
             {filteredNotifications.length === 0 ? (
-              <div className="rounded-3xl bg-slate-50 p-10 text-center text-slate-500">
-                <p className="font-semibold text-slate-700">Bildirim bulunamadı</p>
-                <p className="mt-2 text-sm">Arama kriterlerinizi değiştirin veya yeni bir duyuru oluşturun.</p>
+              <div className="rounded-2xl bg-stone-50 p-10 text-center text-stone-500 border border-dashed border-stone-200">
+                <Bell className="w-10 h-10 text-stone-300 mx-auto mb-3" />
+                <p className="font-semibold text-stone-600">Bildirim bulunamadı</p>
+                <p className="mt-2 text-sm text-stone-500">Arama kriterlerinizi değiştirin veya yeni bir duyuru oluşturun.</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredNotifications.map((item) => (
-                  <div key={item.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:bg-slate-100">
+                {filteredNotifications.map((item) => ( // Changed from item.id to item.id for key
+                  <div key={item.id} className="rounded-2xl border border-stone-200 bg-stone-50 p-5 transition hover:bg-stone-100">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="space-y-3">
                         <div className="flex flex-wrap gap-2">
@@ -250,8 +247,8 @@ export default function AdminNotificationsClient({ salons, notifications }: Prop
                           </span>
                         </div>
                         <div>
-                          <h4 className="text-lg font-bold text-slate-900">{item.title}</h4>
-                          <p className="mt-2 text-sm leading-6 text-slate-600">{item.message}</p>
+                          <h4 className="text-lg font-black text-stone-900">{item.title}</h4>
+                          <p className="mt-2 text-sm leading-6 text-stone-600">{item.message}</p>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-3">

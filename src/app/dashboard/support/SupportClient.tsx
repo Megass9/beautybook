@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import { 
-  LifeBuoy, Plus, Send, MessageSquare, Clock, CheckCircle2, X, ChevronRight, Loader2
+  LifeBuoy, Plus, Send, MessageSquare, Clock, CheckCircle2, X, ChevronRight, Loader2, ArrowLeft
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -13,6 +13,7 @@ export default function SupportClient({ salonId, initialTickets }: { salonId: st
   const supabase = createClient() as any;
   const [tickets, setTickets] = useState(initialTickets);
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showNewTicket, setShowNewTicket] = useState(false);
   const [formData, setFormData] = useState({ subject: "", message: "" });
@@ -72,6 +73,7 @@ export default function SupportClient({ salonId, initialTickets }: { salonId: st
       const newTicket = { ...data, messages: [{ sender: "salon", message: formData.message, created_at: new Date().toISOString() }] };
       setTickets([newTicket, ...tickets]);
       setSelectedTicket(newTicket);
+      setIsChatOpen(true);
       setFormData({ subject: "", message: "" });
       setShowNewTicket(false);
       toast.success("Destek talebiniz oluşturuldu!");
@@ -122,11 +124,11 @@ export default function SupportClient({ salonId, initialTickets }: { salonId: st
   };
 
   return (
-    <div className="h-[calc(100vh-140px)] flex flex-col gap-6 animate-fade-in">
+    <div className="min-h-[calc(100vh-140px)] flex flex-col gap-6 animate-fade-in p-2 md:p-0">
       
       {/* Header */}
-      <div className="flex items-center justify-between shrink-0">
-        <div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
+        <div className={isChatOpen ? "hidden md:block" : "block"}>
           <h1 className="text-4xl font-black text-stone-900 tracking-tight italic">Destek Merkezi</h1>
           <p className="text-stone-500 font-medium mt-1">Ekibimizle buradan yazışabilirsiniz.</p>
         </div>
@@ -159,16 +161,19 @@ export default function SupportClient({ salonId, initialTickets }: { salonId: st
       )}
 
       {/* Main Layout */}
-      <div className="flex flex-1 gap-6 overflow-hidden min-h-0">
+      <div className="flex flex-1 gap-6 overflow-hidden min-h-[500px]">
         
         {/* Sol: Liste */}
-        <div className="w-80 shrink-0 flex flex-col gap-3 overflow-y-auto pr-1 custom-scrollbar">
+        <div className={`w-full lg:w-80 shrink-0 flex flex-col gap-3 overflow-y-auto pr-1 custom-scrollbar ${isChatOpen ? 'hidden lg:flex' : 'flex'}`}>
           {tickets.map((ticket) => {
             const s = getStatusInfo(ticket.status);
             return (
               <button
                 key={ticket.id}
-                onClick={() => setSelectedTicket(ticket)}
+                onClick={() => {
+                  setSelectedTicket(ticket);
+                  setIsChatOpen(true);
+                }}
                 className={`w-full text-left p-5 rounded-[2rem] border transition-all relative ${
                   selectedTicket?.id === ticket.id 
                     ? "bg-white border-rose-500 shadow-lg" 
@@ -196,12 +201,28 @@ export default function SupportClient({ salonId, initialTickets }: { salonId: st
         </div>
 
         {/* Sağ: Chat */}
-        <div className="flex-1 flex flex-col bg-white rounded-[3rem] border border-stone-200 shadow-sm overflow-hidden min-h-0">
+        <div className={`flex-1 flex flex-col bg-white rounded-[2rem] md:rounded-[3rem] border border-stone-200 shadow-sm overflow-hidden min-h-0 ${!isChatOpen ? 'hidden lg:flex' : 'flex'}`}>
           {selectedTicket ? (
             <>
               {/* Chat Header */}
-              <div className="px-8 py-6 border-b border-stone-50 bg-stone-50/50 flex justify-between items-center">
-                <div>
+              <div className="px-6 md:px-8 py-4 md:py-6 border-b border-stone-50 bg-stone-50/50 flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <button 
+                    onClick={() => setIsChatOpen(false)}
+                    className="lg:hidden w-10 h-10 bg-white border border-stone-200 rounded-xl flex items-center justify-center text-stone-500"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                  <div>
+                    <h2 className="font-black text-stone-900 text-lg">{selectedTicket.subject}</h2>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${getStatusInfo(selectedTicket.status).color}`}>
+                        {getStatusInfo(selectedTicket.status).label}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
                   <h2 className="font-black text-stone-900 text-lg">{selectedTicket.subject}</h2>
                   <div className="flex items-center gap-3 mt-1">
                     <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${getStatusInfo(selectedTicket.status).color}`}>

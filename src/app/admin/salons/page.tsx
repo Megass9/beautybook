@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import SalonActionButtons from "../dashboard/SalonActionButtons";
 import {
@@ -38,10 +40,19 @@ export default async function AdminSalonsPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
+  const supabaseServer = createServerClient();
+  const { data: { user } } = await supabaseServer.auth.getUser();
+
+  // Admin kontrolü
+  if (!user || user.app_metadata?.role !== "admin") {
+    redirect("/admin/login");
+  }
+
   const params = searchParams;
   const sort = (params?.sort as string) || "created_desc";
   const filter = (params?.filter as string) || "all";
-  const search = (params?.search as string) || "";
+  const searchRaw = (params?.search as string) || "";
+  const search = searchRaw.toLocaleLowerCase("tr-TR");
 
   const supabase = createAdminClient();
 
@@ -58,9 +69,10 @@ export default async function AdminSalonsPage({
     const isTrial = new Date() < trialEndDate && !activeSub;
     const isExpired = !activeSub && !isTrial;
 
-    if (search && !salon.name.toLowerCase().includes(search.toLowerCase()) && 
-        !salon.slug.toLowerCase().includes(search.toLowerCase()) && 
-        !salon.city?.toLowerCase().includes(search.toLowerCase())) {
+    if (search && 
+        !salon.name.toLocaleLowerCase("tr-TR").includes(search) && 
+        !salon.slug.toLocaleLowerCase("tr-TR").includes(search) && 
+        !salon.city?.toLocaleLowerCase("tr-TR").includes(search)) {
       return false;
     }
 
@@ -234,29 +246,29 @@ export default async function AdminSalonsPage({
             return (
               <div
                 key={salon.id}
-                className={`group bg-white rounded-2xl border-2 transition-all duration-300 overflow-hidden hover:shadow-xl hover:-translate-y-1 ${
-                  salon.is_active ? 'border-stone-200' : 'border-red-200 bg-red-50/30'
+                className={`group bg-white rounded-[2rem] border transition-all duration-500 overflow-hidden hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] hover:-translate-y-1.5 ${
+                  salon.is_active ? 'border-stone-200' : 'border-red-100 bg-red-50/20'
                 }`}
               >
                 {/* Header Banner */}
-                <div className={`h-2 ${statusConfig.color}`} />
+                <div className={`h-1.5 w-full ${statusConfig.color} opacity-80`} />
                 
-                <div className="p-6">
+                <div className="p-7">
                   {/* Üst Kısım - Logo ve Statü */}
                   <div className="flex items-start justify-between mb-6">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-stone-100 to-stone-200 rounded-xl flex items-center justify-center shadow-inner">
-                        <Building2 className="w-6 h-6 text-stone-600" />
+                      <div className="w-14 h-14 bg-stone-50 border border-stone-100 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-500">
+                        <Building2 className="w-7 h-7 text-stone-400 group-hover:text-rose-500 transition-colors" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-black text-stone-900 tracking-tight">{salon.name}</h3>
+                        <h3 className="text-xl font-black text-stone-900 tracking-tight leading-none mb-1">{salon.name}</h3>
                         <p className="text-xs font-mono text-stone-400">@{salon.slug}</p>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <div className={`px-3 py-1.5 rounded-lg ${statusConfig.color} shadow-sm flex items-center gap-2`}>
+                    <div className="flex flex-col items-end gap-1.5">
+                      <div className={`px-3 py-1.5 rounded-xl ${statusConfig.color} shadow-sm flex items-center gap-2 border border-white/20`}>
                         <StatusIcon className="w-3 h-3 text-white" />
-                        <span className="text-[10px] font-black text-white uppercase tracking-wider">
+                        <span className="text-[9px] font-black text-white uppercase tracking-widest">
                           {statusConfig.label}
                         </span>
                       </div>
@@ -272,110 +284,89 @@ export default async function AdminSalonsPage({
                   {/* Ana Bilgiler */}
                   <div className="space-y-4 mb-6">
                     {/* İletişim Bilgileri */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="flex items-center gap-2 text-stone-600 bg-stone-50 p-2.5 rounded-xl">
-                        <MapPin className="w-4 h-4 text-rose-400 flex-shrink-0" />
-                        <span className="text-xs font-medium truncate">{salon.city || 'Şehir yok'}</span>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                      <div className="flex items-center gap-2 text-stone-500">
+                        <MapPin className="w-3.5 h-3.5 text-stone-300" />
+                        <span className="text-xs font-bold uppercase tracking-tight">{salon.city || 'Belirtilmedi'}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-stone-600 bg-stone-50 p-2.5 rounded-xl">
-                        <Phone className="w-4 h-4 text-rose-400 flex-shrink-0" />
-                        <span className="text-xs font-medium truncate">{salon.phone || 'Telefon yok'}</span>
+                      <div className="flex items-center gap-2 text-stone-500">
+                        <Phone className="w-3.5 h-3.5 text-stone-300" />
+                        <span className="text-xs font-bold">{salon.phone || '—'}</span>
                       </div>
                     </div>
 
                     {/* İstatistikler */}
-                    <div className="bg-gradient-to-r from-stone-50 to-stone-100 rounded-xl p-4">
-                      <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-stone-50/80 backdrop-blur-sm border border-stone-100 rounded-3xl p-5">
+                      <div className="grid grid-cols-3 gap-2">
                         <div className="text-center">
-                          <div className="flex items-center justify-center mb-1">
-                            <Users className="w-4 h-4 text-rose-400" />
+                          <p className="text-xl font-black text-stone-900 mb-0.5">{salon.staff?.[0]?.count || 0}</p>
+                          <div className="flex items-center justify-center gap-1">
+                            <Users className="w-3 h-3 text-rose-400" />
+                            <p className="text-[8px] font-black text-stone-400 uppercase tracking-widest">Uzman</p>
                           </div>
-                          <p className="text-lg font-black text-stone-800">{salon.staff?.[0]?.count || 0}</p>
-                          <p className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">Uzman</p>
                         </div>
-                        <div className="text-center border-x border-stone-200">
-                          <div className="flex items-center justify-center mb-1">
-                            <Scissors className="w-4 h-4 text-rose-400" />
+                        <div className="text-center border-x border-stone-200/60 px-2">
+                          <p className="text-xl font-black text-stone-900 mb-0.5">{salon.services?.[0]?.count || 0}</p>
+                          <div className="flex items-center justify-center gap-1">
+                            <Scissors className="w-3 h-3 text-rose-400" />
+                            <p className="text-[8px] font-black text-stone-400 uppercase tracking-widest">Hizmet</p>
                           </div>
-                          <p className="text-lg font-black text-stone-800">{salon.services?.[0]?.count || 0}</p>
-                          <p className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">Hizmet</p>
                         </div>
                         <div className="text-center">
-                          <div className="flex items-center justify-center mb-1">
-                            <CalendarDays className="w-4 h-4 text-rose-400" />
+                          <p className="text-xl font-black text-stone-900 mb-0.5">{salon.appointments?.[0]?.count || 0}</p>
+                          <div className="flex items-center justify-center gap-1">
+                            <CalendarDays className="w-3 h-3 text-rose-400" />
+                            <p className="text-[8px] font-black text-stone-400 uppercase tracking-widest">Randevu</p>
                           </div>
-                          <p className="text-lg font-black text-stone-800">{salon.appointments?.[0]?.count || 0}</p>
-                          <p className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">Randevu</p>
                         </div>
                       </div>
                     </div>
 
                     {/* Abonelik Detayı */}
-                    <div className="bg-white border border-stone-200 rounded-xl p-4">
+                    <div className="bg-white border border-stone-100 rounded-2xl p-4 shadow-[0_4px_12px_rgba(0,0,0,0.02)]">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <CreditCard className="w-4 h-4 text-stone-400" />
-                          <span className="text-xs font-bold text-stone-600 uppercase tracking-wider">Abonelik Bilgisi</span>
+                          <CreditCard className="w-3.5 h-3.5 text-stone-300" />
+                          <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Abonelik</span>
                         </div>
-                        <TrendingUp className="w-4 h-4 text-stone-300" />
+                        <div className={`w-1.5 h-1.5 rounded-full ${statusConfig.color}`} />
                       </div>
                       
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] text-stone-500">Bitiş Tarihi</span>
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-3 h-3 text-rose-400" />
-                            <span className="text-xs font-bold text-stone-800">
-                              {activeSub?.end_date 
-                                ? format(new Date(activeSub.end_date), "d MMM yyyy", { locale: tr })
-                                : isTrial
-                                ? format(trialEndDate, "d MMM yyyy", { locale: tr })
-                                : "Abonelik yok"}
-                            </span>
-                          </div>
+                          <span className="text-[10px] font-bold text-stone-400">Bitiş</span>
+                          <span className="text-xs font-black text-stone-800">
+                            {activeSub?.end_date 
+                              ? format(new Date(activeSub.end_date), "d MMM yyyy", { locale: tr })
+                              : isTrial
+                              ? format(trialEndDate, "d MMM yyyy", { locale: tr })
+                              : "—"}
+                          </span>
                         </div>
                         {activeSub && (
                           <div className="flex items-center justify-between">
-                            <span className="text-[11px] text-stone-500">Plan</span>
-                            <span className="text-xs font-bold text-stone-800 uppercase">
+                            <span className="text-[10px] font-bold text-stone-400">Paket</span>
+                            <span className="text-[10px] font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">
                               {activeSub.plan_name || activeSub.plan_type || "Standart"}
                             </span>
                           </div>
                         )}
                       </div>
                     </div>
-
-                    {/* Detaylı Bilgiler */}
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-stone-500 text-xs">
-                        <Mail className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span className="truncate">{salon.email || 'E-posta yok'}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-stone-500 text-xs">
-                        <User className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span className="font-mono text-[10px] truncate">ID: {salon.owner_id?.slice(0, 8)}...</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-stone-500 text-xs">
-                        <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span>Kayıt: {format(new Date(salon.created_at), "d MMM yyyy", { locale: tr })}</span>
-                      </div>
-                    </div>
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="pt-4 border-t border-stone-200 flex items-center justify-between gap-4">
+                  <div className="pt-6 border-t border-stone-100 flex items-center justify-between gap-4">
                     <div className="flex-1">
                       <SalonActionButtons salonId={salon.id} isActive={salon.is_active} />
                     </div>
                     <a
                       href={`/salon/${salon.slug}`}
                       target="_blank"
-                      className="flex items-center gap-2 px-4 py-2 bg-stone-100 hover:bg-rose-50 rounded-xl transition-colors group"
+                      className="w-10 h-10 bg-stone-50 hover:bg-rose-50 border border-stone-100 hover:border-rose-100 rounded-xl flex items-center justify-center transition-all group"
+                      title="Siteyi Görüntüle"
                     >
-                      <span className="text-xs font-bold text-stone-600 group-hover:text-rose-600 uppercase tracking-wider">
-                        İncele
-                      </span>
-                      <ExternalLink className="w-3.5 h-3.5 text-stone-400 group-hover:text-rose-500" />
+                      <ExternalLink className="w-4 h-4 text-stone-400 group-hover:text-rose-500" />
                     </a>
                   </div>
                 </div>

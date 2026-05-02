@@ -1,3 +1,4 @@
+import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
@@ -5,6 +6,13 @@ import { Database } from "@/types"; // Database tipini içeri aktarıyoruz
 
 export async function POST(req: Request) {
   try {
+    const supabaseServer = createServerClient();
+    const { data: { user } } = await supabaseServer.auth.getUser();
+
+    if (!user || user.app_metadata?.role !== "admin") {
+      return NextResponse.json({ error: "Yetkisiz erişim." }, { status: 401 });
+    }
+
     const supabase = createAdminClient();
     const { salonId, action } = await req.json();
 

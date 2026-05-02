@@ -75,9 +75,9 @@ export default function SalonsClient({ initialSalons }: { initialSalons: any[] }
         </div>
 
         {/* Salon List Table */}
-        <div className="bg-white rounded-[3rem] border border-stone-200 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+        <div className="bg-white rounded-[2rem] md:rounded-[3rem] border border-stone-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-stone-50/50 border-b border-stone-100">
                   <th className="px-8 py-6 text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">İşletme Bilgisi</th>

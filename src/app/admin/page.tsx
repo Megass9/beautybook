@@ -3,11 +3,12 @@ import AdminClient from "./AdminClient";
 import { redirect } from "next/navigation";
 
 export default async function SuperAdminPage() {
-  const supabase = createServerClient() as any;
-  const { data: { session } } = await supabase.auth.getSession();
+  const supabase = createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session) {
-    redirect("/auth/login");
+  // Bu kontrol sayfa render edilmeden önce sunucu tarafında çalışır
+  if (!user || user.app_metadata?.role !== "admin") {
+    redirect("/admin/login");
   }
 
   const { data: subscriptions } = await supabase

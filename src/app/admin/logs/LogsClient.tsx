@@ -57,7 +57,7 @@ export default function LogsClient({ initialLogs }: { initialLogs: any[] }) {
 
   return (
     <div className="min-h-screen bg-stone-50/50 p-4 md:p-8 font-sans">
-      <div className="max-w-7xl mx-auto flex flex-col gap-8 h-[calc(100vh-120px)]">
+      <div className="max-w-7xl mx-auto flex flex-col gap-8 lg:h-[calc(100vh-120px)]">
         
         {/* Header & Stats */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 shrink-0">
@@ -106,7 +106,7 @@ export default function LogsClient({ initialLogs }: { initialLogs: any[] }) {
         </div>
 
         {/* Layout */}
-        <div className="flex flex-1 gap-6 overflow-hidden min-h-0">
+        <div className="flex flex-col lg:flex-row flex-1 gap-6 overflow-hidden min-h-0">
           
           {/* Sol: Liste ve Grafik */}
           <div className="flex-1 flex flex-col gap-6 overflow-hidden min-h-0">
@@ -123,7 +123,7 @@ export default function LogsClient({ initialLogs }: { initialLogs: any[] }) {
                   </div>
                </div>
                
-               <div className="flex items-end justify-between h-32 gap-2">
+               <div className="flex items-end justify-between h-32 gap-1 md:gap-2 overflow-x-auto pb-2">
                   {chartData.map((data, i) => (
                     <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
                        <div className="w-full relative flex items-end justify-center h-full">
@@ -147,8 +147,8 @@ export default function LogsClient({ initialLogs }: { initialLogs: any[] }) {
 
             {/* Log Listesi */}
             <div className="flex-1 bg-white rounded-[2.5rem] border border-stone-200 shadow-sm overflow-hidden flex flex-col min-h-0">
-              <div className="overflow-y-auto custom-scrollbar flex-1">
-                <table className="w-full text-left border-collapse">
+              <div className="overflow-auto custom-scrollbar flex-1">
+                <table className="w-full text-left border-collapse min-w-[500px]">
                     <thead className="sticky top-0 bg-stone-50 z-10 border-b border-stone-100">
                       <tr>
                           <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Zaman / Tür</th>

@@ -257,7 +257,7 @@ export default function AdminSupportClient({ initialTickets }: { initialTickets:
         </div>
 
         {/* Main Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
           
           {/* Left Panel - Tickets List */}
           <div className="lg:col-span-1 space-y-4">
@@ -305,7 +305,7 @@ export default function AdminSupportClient({ initialTickets }: { initialTickets:
             </div>
 
             {/* Tickets List */}
-            <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
+            <div className="space-y-2 max-h-[400px] lg:max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
               {filteredTickets.map((ticket) => {
                 const statusInfo = getStatusInfo(ticket.status);
                 const StatusIcon = statusInfo.icon;
@@ -370,9 +370,9 @@ export default function AdminSupportClient({ initialTickets }: { initialTickets:
           {/* Right Panel - Chat Detail */}
           <div className="lg:col-span-2">
             {selectedTicket ? (
-              <div className="bg-white rounded-2xl border border-stone-200 shadow-xl overflow-hidden flex flex-col h-[700px]">
+              <div className="bg-white rounded-2xl border border-stone-200 shadow-xl overflow-hidden flex flex-col h-[600px] lg:h-[700px]">
                 {/* Chat Header */}
-                <div className="bg-gradient-to-r from-stone-900 to-stone-800 text-white p-6">
+                <div className="bg-gradient-to-r from-stone-900 to-stone-800 text-white p-5 md:p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <h2 className="text-xl font-black mb-1">{selectedTicket.subject}</h2>

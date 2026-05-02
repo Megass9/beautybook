@@ -32,8 +32,8 @@ export default async function LandingPage() {
           <span className="font-black text-2xl tracking-tighter text-stone-900">BeautyBook.</span>
         </div>
         <div className="hidden md:flex items-center gap-2 bg-white/80 border border-stone-200/80 rounded-full p-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] backdrop-blur-md">
-          {["Özellikler", "Fiyatlar", "Müşteriler", "Hakkında"].map(item => (
-            <a key={item} href={item === "Fiyatlar" ? "#fiyatlar" : `#${item.toLowerCase()}`} className="text-sm font-bold text-stone-500 hover:text-stone-900 hover:bg-stone-100/80 transition-all px-5 py-2 rounded-full">
+          {["Özellikler", "Fiyatlar", "Müşteriler", "Hakkımızda"].map(item => (
+            <a key={item} href={item === "Fiyatlar" ? "#fiyatlar" : item === "Hakkımızda" ? "/hakkimizda" : `#${item.toLowerCase()}`} className="text-sm font-bold text-stone-500 hover:text-stone-900 hover:bg-stone-100/80 transition-all px-5 py-2 rounded-full">
               {item}
             </a>
           ))}
@@ -49,10 +49,8 @@ export default async function LandingPage() {
         </div>
       </nav>
 
-      {/* ... (Hero ve diğer kısımlar aynı) ... */}
       {/* ── HERO ── */}
       <section className="pt-36 pb-0 px-6 relative overflow-hidden">
-        {/* ... (İçerik aynı kalsın diye atlıyorum, replace işlemi tüm dosyayı kapsamayacak şekilde yapılacak) ... */}
         {/* Abstract Glows */}
         <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-rose-200/40 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="absolute top-40 left-0 w-[600px] h-[600px] bg-amber-100/40 rounded-full blur-[100px] -translate-x-1/2 pointer-events-none" />
@@ -89,7 +87,7 @@ export default async function LandingPage() {
                 14 Gün Ücretsiz Dene
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
               </Link>
-              <Link href="#demo" className="group flex items-center justify-center gap-3 bg-white hover:bg-stone-50 border border-stone-200/80 text-stone-800 text-lg font-bold px-10 py-5 rounded-2xl transition-all shadow-sm hover:shadow-md w-full sm:w-auto">
+              <Link href="/demo" className="group flex items-center justify-center gap-3 bg-white hover:bg-stone-50 border border-stone-200/80 text-stone-800 text-lg font-bold px-10 py-5 rounded-2xl transition-all shadow-sm hover:shadow-md w-full sm:w-auto">
                 <span className="w-8 h-8 bg-rose-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Play className="w-3.5 h-3.5 text-rose-600 ml-0.5 fill-rose-600" />
                 </span>

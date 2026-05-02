@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   TrendingUp,
@@ -30,6 +32,14 @@ import { tr } from "date-fns/locale";
 export const dynamic = "force-dynamic";
 
 export default async function AdminReportsPage() {
+  const supabaseServer = createServerClient();
+  const { data: { user } } = await supabaseServer.auth.getUser();
+
+  // Admin kontrolü: Giriş yapmamışsa veya role 'admin' değilse dışarı at
+  if (!user || user.app_metadata?.role !== "admin") {
+    redirect("/admin/login");
+  }
+
   const supabase = createAdminClient() as any;
 
   // Tüm tamamlanmış randevuları çek
