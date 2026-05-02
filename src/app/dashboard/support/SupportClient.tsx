@@ -223,14 +223,6 @@ export default function SupportClient({ salonId, initialTickets }: { salonId: st
                   </div>
                 </div>
               </div>
-                  <h2 className="font-black text-stone-900 text-lg">{selectedTicket.subject}</h2>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${getStatusInfo(selectedTicket.status).color}`}>
-                      {getStatusInfo(selectedTicket.status).label}
-                    </span>
-                  </div>
-                </div>
-              </div>
 
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-8 space-y-6 min-h-0 custom-scrollbar bg-stone-50/10">

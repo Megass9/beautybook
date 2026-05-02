@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = createAdminClient();
+    const supabase = createAdminClient() as any;
 
     // 🔍 Abonelik kontrolü
     const { data: sub, error: fetchError } = await supabase
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
         status: "active",
         start_date: startDate.toISOString(),
         end_date: endDate.toISOString(),
-      } as any)
+      })
       .eq("id", subId);
 
     if (subUpdateError) {
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     // 🏪 Salon update
     const { error: salonUpdateError } = await supabase
       .from("salons")
-      .update({ is_active: true } as any)
+      .update({ is_active: true })
       .eq("id", sub.salon_id);
 
     if (salonUpdateError) {
